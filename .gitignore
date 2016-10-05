@@ -1,0 +1,7 @@
+
+WebSite/connectionStrings.config
+[Bb]in/
+[Oo]bj/
+.vs/
+**/packages/*
+BackupManagerRepository/

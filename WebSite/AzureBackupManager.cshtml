@@ -1,0 +1,710 @@
+﻿@inherits System.Web.WebPages.WebPage
+@using System.Configuration
+@using System.Data.SqlClient
+@using System.Reflection
+@using System.Web.Hosting
+@using Ionic.Zip
+@using Microsoft.SqlServer.Management.Common
+@using Microsoft.SqlServer.Management.Smo
+@using Microsoft.Web.Administration
+@using Microsoft.WindowsAzure.Storage
+@using Microsoft.WindowsAzure.Storage.Blob
+@{
+    if (!(User.IsInRole("WebAdmins") || User.IsInRole("CmsAdmins") || User.IsInRole("Administrators")))
+    {
+        Response.ClearContent();
+        Response.Write("Access Denied!");
+        Response.StatusCode = (int)HttpStatusCode.Forbidden;
+        return;
+    }
+    OnLoad();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Azure Backup Manager</title>
+    <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.7/yeti/bootstrap.min.css">
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        .panel-heading a:after { font-family:'Glyphicons Halflings'; content:"\e114"; float: right; color: grey; }
+        .panel-heading a.collapsed:after { content:"\e080"; }
+        .panel-heading a { text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-header">
+        <h1>
+            Azure Backup Manager
+            <a href="#" data-toggle="collapse" data-target="#collapse-info"><span class="badge"><i class="glyphicon glyphicon-info-sign"></i> Information</span></a>
+        </h1>
+        <div id="collapse-info" class="panel-body collapse">
+            <h3>For what?</h3>
+            <p>Azure Backup Manager is mainly targeted for handling backups and restoring data of web site project (like Episerver CMS).
+            Data includes SQL Server Database and AppData folders which are the most common application data storages in Episerver projects.</p>
+            <h3>Why?</h3>
+            <h4>It's designed for following use cases</h4>
+            <ul>
+                <li><b>Managing backup archives</b>
+                    <ul>
+                        <li>List, Create, Delete, Download and Upload backups</li>
+                    </ul>
+                </li>
+                <li><b>Transferring data</b> between environments (Production, Staging, Testing, Dev, Local)</li>
+                <li><b>Helping integration testing</b> (or any other kind of processes which needs to be restored several times)
+                    <ul>
+                        <li>Quickly create/restore snapshots of data so it's easy to rerun the process.</li>
+                        <li>You may even have different snapshots for different test scenarios.</li>
+                    </ul>
+                </li>
+                <li><b>Backups before production deployments</b> or even automate the backups in deployments</li>
+                <li>Scheduling <b>daily, weekly and monthly backups</b></li>
+                <li>Scheduling <b>cleaning of old backups</b></li>
+                <li><b>Works on my machine -problems</b> and easing the problem solving</li>
+                <li>Improving the data integrity by handling full backup packages. Packages are meant to create and restored with the same tools.</li>
+            </ul>
+            <h3>How?</h3>
+            <h4>There are two different ways to run it</h4>
+            <ol>
+                <li><b>Inside of target web site</b> which you are targeting the backups. It can be Episerver web site or any other type. <i>(Easier to maintain)</i></li>
+                <li><b>Parallel web site</b> which will access the project's resources. <i>(More secure way)</i></li>
+            </ol>
+            <h4>Transferring the data</h4>
+            <p>For transferring the data from environment to another, it's required that this tool is installed in all the environments. Only the Azure Blob storage remain the same in all environments.</p>
+            <h4>Backup manager requires lot of privileges</h4>
+            <ul>
+                <li>IIS application pool user needs to have write and delete access to Local Repository -folder. Example folder path C:\Website\BackupManagerRepository\.</li>
+                <li>IIS application pool user needs to have write and delete access to App Data -folder</li>
+                <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
+            </ul>
+            <h4>Dependens on 5 NuGet Packages</h4>
+            <ol>
+                <li><b>WindowsAzure.Storage</b> version="7.2.1"</li>
+                <li><b>DotNetZip</b> version="1.9.1.8"</li>
+                <li><b>Microsoft.SqlServer.ConnectionInfo.dll</b> version="1.0.1"</li>
+                <li><b>Microsoft.SqlServer.Management.Sdk.Sfc.dll</b> version="1.0.1"</li>
+                <li><b>Microsoft.SqlServer.Smo.dll</b> version="1.0.1"</li>
+            </ol>
+            <h3>Installation</h3>
+            <p>Installation depends on how you are planning to run this.</p>
+            <h4>Parallel web site</h4>
+            <ol>
+                <li>Create IIS site based on the GitHub repository sources</li>
+                <li>Enable Basic Authentication for the site.</li>
+                <li>Follow the "Inside of target web site" installation steps from the bullet 3.</li>
+            </ol>
+            <h4>Inside of target web site</h4>
+            <ol>
+                <li>Install NuGet -packages</li>
+                <li>Copy this file</li>
+                <li>Create Azure Blob Storage (type: private)</li>
+                <li>Add 2 ConnectionStrings:
+                    <ol>
+                        <li><b>AzureBackupBlobStorage</b><br/>
+                            Connections string to Azure Blob Storage. <a href="https://azure.microsoft.com/en-us/documentation/articles/storage-configure-connection-string/" target="_blank">Read more</a><br/>
+                            Example: &lt;add name="AzureBackupBlobStorage" connectionString="DefaultEndpointsProtocol=[http|https];AccountName=accountName;AccountKey=accountKey" /&gt;
+                        </li>
+                        <li><b>BackupManager</b><br/>
+                            Connection string to SQL Server (with high user privileges)<br/>
+                            Example: &lt;add name="BackupManager" connectionString="Data Source=(local);Initial Catalog=DatabaseName;User ID=sa;Password=sa_password;Connection Timeout=1800;Integrated Security=False;MultipleActiveResultSets=True" providerName="System.Data.SqlClient" /&gt;
+                        </li>
+                    </ol>
+                </li>
+                <li>Make sure your IIS application user has access to required resources (folders) and SQL Server user (in connection string) has necessary privileges.</li>
+                <li>Backup manager needs to have long timeouts for requests and db connections. This site has 60min (3600secs) timeouts and SQL Connection timeout is set to 30 minutes (1800secs).</li>
+                <li>Start using it!</li>
+            </ol>
+            <p></p>
+            <h3>Security and limitations</h3>
+            <p>This tool is not meant for basic editors or users nor it's meant to very very large backups. It's meant that only developers, devops and hosting "Super Administrators" can use this tool.
+                By default this tool check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators.
+            </p>
+
+        </div>
+    </div>
+
+    <div class="panel panel-default" id="panel1">
+        <div class="panel-heading">
+            <h3 class="panel-title"><a data-toggle="collapse" data-target="#collapse-settings" href="#">Settings <small>show/hide</small></a>
+            </h3>
+        </div>
+        <div id="collapse-settings" class="panel-body panel-collapse collapse @Html.Raw(Request.Params["settings"] != null ? "" : "in")">
+            <form method="POST" role="form" action="@(Request.Url.AbsolutePath)">
+                <div class="form-group">
+                    <label for="">Local Repository Path <small>(IIS application pool user needs to have write and delete access to this folder)</small></label>
+                    <input type="text" name="localFolderPath" value="@Settings.LocalFolderPath" class="form-control"/>
+                </div>
+                <div class="form-group">
+                    <label for="">AppData Folder Path <small>(Path to the folder you want to backup/restore)</small></label>
+                    <input type="text" name="appDataFolder" value="@Settings.AppDataFolder" class="form-control"/>
+                </div>
+                <div class="form-group">
+                    <label for="">Blob Storage Container Name <small>(folder name for blob storage)</small></label>
+                    <input type="text" name="containerName" value="@Settings.ContainerName" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label for="">Database Server Name <small>(Target of the backup/restore operations)</small></label>
+                    <input type="text" name="databaseServerName" value="@Settings.DatabaseServerName" class="form-control" disabled="disabled" />
+                </div>
+                <div class="form-group">
+                    <label for="">Database Name <small>(Target of the backup/restore operations)</small></label>
+                    <input type="text" name="databaseName" value="@Settings.DatabaseName" class="form-control" disabled="disabled" />
+                </div>
+                <div class="form-group">
+                    <label for="">Database owner <small>(owner will get the same privileges to restored database)</small></label>
+                    <input type="text" name="databaseOwner" value="@Settings.DatabaseOwner" class="form-control" disabled="disabled" />
+                </div>
+                <input type="hidden" name="settings" value=""/>
+                <input type="hidden" name="action" value="settings"/>
+                <input type="submit" value="Activate" class="btn btn-default"/>
+            </form>
+        </div>
+    </div>
+
+    <hr />
+
+    @if (!string.IsNullOrEmpty(ActionResult))
+    {
+        <div id="result-panel" class="panel panel-primary">
+            <div class="panel-heading">
+                Results <button type="button" class="close" data-target="#result-panel" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="panel-body">@Html.Raw(ActionResult)</div>
+        </div>
+    }
+
+    <h2>Azure Backup Repository</h2>
+    @{
+        var azureBackups = GetAzureBlobStorageBackups()?
+            .Select(b => new
+            {
+                b.Name,
+                Size = Math.Round(((double)b.Properties.Length / 1000000), 2) + " MB",
+                b.Properties.LastModified,
+                Download = "<a href=\"?action=download" +
+                        $"&file={HttpUtility.UrlEncode(b.Name)}" +
+                        $"&settings={SettingsUrlParam}" +
+                        "\" class=\"btn btn-default btn-xs\">Download to Local</a>",
+            })
+            .ToArray();
+    }
+    
+    @if (azureBackups == null)
+    { <div class="alert alert-danger">Could not connect to Azure Blob Storage. Check the connection string!</div> }
+    else if (!azureBackups.Any())
+    { <div class="alert">No backups in Azure Blob Storage!</div> }
+    else
+    {
+        @CreateTableFromList(azureBackups);
+    }
+
+    <hr />
+
+
+    @if (Request.Params["settings"] != null)
+    {
+        if (!Settings.DbExists)
+        {
+            <div class="alert alert-danger">Could not connect to database. Check the connection string!</div>
+        }
+
+        <h2>Local Backup Repository</h2>
+
+        var localBackups = new DirectoryInfo(Settings.LocalFolderPath).GetFiles("*_package.zip").OrderByDescending(f => f.Name)
+            .Select(b => new
+            {
+                b.Name,
+                Size = Math.Round(((double)b.Length / 1000000), 2) + " MB",
+                b.CreationTime,
+                Upload = "<a href=\"?action=upload" +
+                        $"&file={HttpUtility.UrlEncode(b.Name)}" +
+                        $"&settings={SettingsUrlParam}" +
+                        "\" class=\"btn btn-default btn-xs\">Upload to Azure</a>",
+                Restore = "<a href=\"?action=restoreLocal" +
+                        $"&file={HttpUtility.UrlEncode(b.Name)}" +
+                        $"&settings={SettingsUrlParam}" +
+                        "\" onclick=\"return confirm('Are you sure you want to RESTORE this item?');\"" +
+                        " class=\"btn btn-info btn-xs\">Restore</a>",
+                Delete = "<a href=\"?action=deleteLocal" +
+                        $"&file={HttpUtility.UrlEncode(b.Name)}" +
+                        $"&settings={SettingsUrlParam}" +
+                        "\" onclick=\"return confirm('Are you sure you want to DELETE this item?');\"" +
+                        " class=\"btn btn-danger btn-xs\">Delete</a>",
+            })
+            .ToArray();
+
+        @CreateTableFromList(localBackups)
+
+
+        <hr />
+
+        <h2>Backup DB And AppData Folder To Local Repository</h2>
+
+        <form method="POST" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
+            <input type="hidden" name="settings" value="@SettingsSerialized" />
+            <input type="hidden" name="action" value="backupLocal" />
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label" for="">Short Backup Name <br />(optional, no whitespace)</label>
+                <div class="col-sm-9">
+                    <input type="text" name="backupInfix" value="@(Request.Params["backupInfix"] ?? "")" placeholder="daily" class="form-control" />
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3"></div>
+                <div class="col-sm-9">
+                    <input type="submit" value="BACKUP To Local" class="btn btn-primary" />
+                </div>
+            </div>
+
+        </form>
+
+        <hr />
+
+        <h2>Backup To Azure Repository</h2>
+
+        <form method="POST" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
+            <input type="hidden" name="settings" value="@SettingsSerialized" />
+            <input type="hidden" name="action" value="backupAzure" />
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label" for="">Short Backup Name <br />(optional, no whitespace)</label>
+                <div class="col-sm-9">
+                    <input type="text" name="backupInfix" value="@(Request.Params["backupInfix"] ?? "")" placeholder="daily" class="form-control" />
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3"></div>
+                <div class="col-sm-9">
+                    <input type="submit" value="BACKUP To Azure" class="btn btn-primary" />
+                </div>
+            </div>
+
+        </form>
+
+        <hr />
+
+        <h2>Clean Old Backups From Azure</h2>
+
+        <form method="POST" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
+            <input type="hidden" name="settings" value="@SettingsSerialized" />
+            <input type="hidden" name="action" value="cleanAzure" />
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label" for="">Filter by backup name</label>
+                <div class="col-sm-9">
+                    <input type="text" name="filterInfix" value="@(Request.Params["filterInfix"] ?? "_daily_")" placeholder="_daily_" class="form-control" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label" for="">Minimum number of days old</label>
+                <div class="col-sm-9">
+                    <input type="text" name="minDays" value="@(Request.Params["minDays"] ?? "7")" class="form-control" />
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3"></div>
+                <div class="col-sm-9">
+                    <label class="checkbox-inline" for="simulate">
+                        <input type="checkbox" id="simulate" name="simulate" @(Request.Params["simulate"] == "True" ? "checked" : "") value="True" />
+                        Simulate only (will not delete anything)
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3"></div>
+                <div class="col-sm-9">
+                    <input type="submit" value="CLEAN Azure" class="btn btn-danger" onclick="return confirm('Are you sure you want to CLEAN Azure backups?');" />
+                </div>
+            </div>
+
+        </form>
+
+        <hr />
+    }
+</div>
+</body>
+</html>
+@functions
+{
+    public const string BackupManagerConnectionStringName = "BackupManager";
+    public const string AzureBlobStorageConnectionStringName = "AzureBackupBlobStorage";
+    public string ActionResult;
+    public ManagerSettings Settings;
+    public string SettingsSerialized;
+    public string SettingsUrlParam;
+
+    public void OnLoad()
+    {
+        Settings = !string.IsNullOrEmpty(Request.Params["settings"]) ? Json.Decode<ManagerSettings>(Request.Params["settings"]) : GetSettingsFromParamsOrDefault();
+        SettingsSerialized = Json.Encode(Settings);
+        SettingsUrlParam = HttpUtility.UrlEncode(SettingsSerialized);
+
+        switch (Request.Params["action"])
+        {
+            case "settings":
+                Settings = GetSettingsFromParamsOrDefault();
+                SettingsSerialized = Json.Encode(Settings);
+                SettingsUrlParam = HttpUtility.UrlEncode(SettingsSerialized);
+                //Creates the directory if it does not exist or throws an error if IIS user does not have privileges.
+                Directory.CreateDirectory(Settings.LocalFolderPath);
+                break;
+            case "download":
+                DownloadPackage(Settings, Request.Params["file"]);
+                ActionResult = $"File ({Request.Params["file"]}) is downloaded to Local Repository!";
+                break;
+            case "upload":
+                var backupUri = SendBackupPackage(Settings, Request.Params["file"]);
+                ActionResult = $"File ({Request.Params["file"]}) has been uploaded into Azure Repository! Backup URI: {backupUri}.";
+                break;
+            case "deleteLocal":
+                string fileFullPath = Settings.LocalFolderPath + Request.Params["file"];
+                File.Delete(fileFullPath);
+                ActionResult = $"File ({fileFullPath}) is deleted!";
+                break;
+            case "backupLocal":
+                string backupFileName = BackupLocal(Settings, Request.Params["backupInfix"]);
+                ActionResult = $"Backup Created ({backupFileName}) in Local Repository!";
+                break;
+            case "restoreLocal":
+                RestoreLocal(Settings, Request.Params["file"]);
+                ActionResult = $"Backup ({Request.Params["file"]}) restored!";
+                break;
+            case "backupAzure":
+                string backupAzureUri = BackupAzure(Settings, Request.Params["backupInfix"]);
+                ActionResult = $"Backup Created ({backupAzureUri}) and uploaded in Azure!";
+                break;
+            case "cleanAzure":
+                bool simulate = bool.Parse(Request.Params["simulate"] ?? "False");
+                string[] deletedFileNames = CleanAzure(Settings.ContainerName, Request.Params["filterInfix"], int.Parse(Request.Params["minDays"]), simulate);
+                ActionResult = $"{deletedFileNames.Count()} file(s) were deleted from Azure! {(simulate ? "Simulating!!!": "")}<br/>{string.Join("<br/>", deletedFileNames)}";
+                break;
+        }
+    }
+
+    public class ManagerSettings
+    {
+        public string LocalFolderPath { get; set; }
+        public string DatabaseName { get; set; }
+        public string AppDataFolder { get; set; }
+        public string DatabaseUser { get; set; }
+        public string ContainerName { get; set; }
+        public string DatabaseOwner { get; set; }
+        public string DbConnectionString { get; set; }
+        public string DatabaseServerName { get; set; }
+        public bool DbExists { get; set; }
+    }
+
+    public ManagerSettings GetSettingsFromParamsOrDefault()
+    {
+        var connectionString = ConfigurationManager.ConnectionStrings[BackupManagerConnectionStringName]?.ConnectionString;
+        var databaseName = Request.Params["databaseName"]
+                           ?? ConfigurationManager.AppSettings["BackupManager.DatabaseName"]
+                           ?? new SqlConnectionStringBuilder(connectionString).InitialCatalog;
+        return new ManagerSettings()
+        {
+            LocalFolderPath = Request.Params["localFolderPath"]
+                            ?? ConfigurationManager.AppSettings["BackupManager.LocalFolderPath"]
+                            ?? (new DirectoryInfo(HttpContext.Current.Server.MapPath("~")).Parent?.Parent?.FullName ?? "C:\\temp") + "\\BackupManagerRepository\\",
+            AppDataFolder = Request.Params["appDataFolder"]
+                            ?? ConfigurationManager.AppSettings["BackupManager.AppDataFolder"]
+                            ?? TryGetEpiserverAppDataPath()
+                            ?? "C:\\Path\\To\\AppData\\Folder",
+            ContainerName = Request.Params["containerName"]
+                            ?? ConfigurationManager.AppSettings["BackupManager.ContainerName"]
+                            ?? "backup-manager-repository",
+            DatabaseOwner = Request.Params["databaseOwner"]
+                            ?? ConfigurationManager.AppSettings["BackupManager.DatabaseOwner"]
+                            ?? GetDbOwner(databaseName, connectionString)
+                            ?? "DbOwner",
+            DatabaseServerName = Request.Params["databaseServerName"]
+                            ?? ConfigurationManager.AppSettings["BackupManager.DatabaseServerName"]
+                            ?? new SqlConnectionStringBuilder(connectionString).DataSource,
+            DatabaseName = databaseName,
+            DbConnectionString = connectionString,
+            DbExists = DatabaseExists(databaseName, connectionString),
+        };
+    }
+
+    public ICloudBlob[] GetAzureBlobStorageBackups()
+    {
+        try { return GetListOfBlobStorageItems(Settings.ContainerName).ToArray(); }
+        catch (StorageException) { return null; }
+        catch (FormatException) { return null; }
+    }
+
+    public static string BackupLocal(ManagerSettings settings, string backupInfix)
+    {
+        string infoMessage;
+        string dbBackupFileName = BackupDb(settings, out infoMessage);
+        string zipFileName = ZipAppDataFolder(settings);
+        string backupFileName = CreateBackupPackage(settings, dbBackupFileName, zipFileName, backupInfix);
+        File.Delete(settings.LocalFolderPath + dbBackupFileName);
+        File.Delete(settings.LocalFolderPath + zipFileName);
+        return backupFileName;
+    }
+
+    public static string BackupAzure(ManagerSettings settings, string backupInfix)
+    {
+        var backupFileName = BackupLocal(settings, backupInfix);
+        var uri = SendBackupPackage(settings, backupFileName);
+        File.Delete(settings.LocalFolderPath + backupFileName);
+        return uri;
+    }
+
+    public static void RestoreLocal(ManagerSettings settings, string packateZipFile, bool iisreset = true)
+    {
+        string backupFolderPath = ExtractPackage(settings.LocalFolderPath, packateZipFile);
+        var files = Directory.GetFiles(backupFolderPath).Select(s => s?.Replace(settings.LocalFolderPath, "")).ToList();
+        string databaseFile = files.FirstOrDefault(f => f.EndsWith(".bak"));
+        string appDataZipFile = files.FirstOrDefault(f => f.EndsWith(".zip"));
+        RestoreDb(settings, databaseFile);
+        RestoreAppData(settings.LocalFolderPath, appDataZipFile, settings.AppDataFolder);
+        SetDbOwner(settings);
+        Directory.Delete(backupFolderPath, true);
+
+        if (iisreset)
+        {
+            using (ServerManager iisManager = new ServerManager())
+            {
+                SiteCollection sites = iisManager.Sites;
+                foreach (Site site in sites)
+                {
+                    if (site.Name == HostingEnvironment.ApplicationHost.GetSiteName())
+                    {
+                        iisManager.ApplicationPools[site.Applications["/"].ApplicationPoolName].Recycle();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    public static string BackupDb(ManagerSettings settings, out string infoMessage)
+    {
+        //TODO: new database needs to relocate the files (.mdf and .lgf files)
+        var backupFileName = $"{settings.DatabaseName}_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{Environment.MachineName}_db.bak";
+        string info = "";
+        using (var connection = new SqlConnection(settings.DbConnectionString))
+        {
+            connection.InfoMessage +=(sender, args) => info += args.Message + Environment.NewLine;
+            var query = $"BACKUP DATABASE {settings.DatabaseName} TO DISK='{settings.LocalFolderPath}{backupFileName}' WITH COPY_ONLY";
+
+            using (var command = new SqlCommand(query, connection))
+            {
+                connection.Open();
+                command.ExecuteNonQuery();
+                connection.Close();
+            }
+        }
+        infoMessage = info;
+        return backupFileName;
+    }
+
+    public static string ZipAppDataFolder(ManagerSettings settings)
+    {
+        string fileName = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{Environment.MachineName}_AppData.zip";
+        using (ZipFile zip = new ZipFile())
+        {
+            zip.AddDirectory(settings.AppDataFolder);
+            zip.Save(settings.LocalFolderPath + fileName);
+        }
+        return fileName;
+    }
+
+    public static string CreateBackupPackage(ManagerSettings settings, string dbBackupFileName, string appDataZipFileName, string backupInfix)
+    {
+        var infix = string.IsNullOrEmpty(backupInfix) ? "_" : "_" + backupInfix.Replace(" ", "") + "_";
+        string zipFileNamePrefix = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}{infix}{Environment.MachineName}_package";
+        string zipFileName = $"{zipFileNamePrefix}.zip";
+        using (ZipFile zip = new ZipFile())
+        {
+            zip.AddFile($"{settings.LocalFolderPath}{dbBackupFileName}", zipFileNamePrefix);
+            zip.AddFile($"{settings.LocalFolderPath}{appDataZipFileName}", zipFileNamePrefix);
+            zip.Save(settings.LocalFolderPath + zipFileName);
+        }
+        return zipFileName;
+    }
+
+    public static string SendBackupPackage(ManagerSettings settings, string backupFileName)
+    {
+
+        CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[AzureBlobStorageConnectionStringName].ConnectionString);
+        CloudBlobClient blobClient = account.CreateCloudBlobClient();
+        CloudBlobContainer container = blobClient.GetContainerReference(settings.ContainerName);
+        container.CreateIfNotExists();
+        CloudBlockBlob blockBlob = container.GetBlockBlobReference(backupFileName);
+        using (var fileStream = File.OpenRead($"{settings.LocalFolderPath}{backupFileName}"))
+        {
+            blockBlob.UploadFromStream(fileStream);
+        }
+        return blockBlob.Uri.ToString();
+    }
+
+    public static string DownloadPackage(ManagerSettings settings, string fileName)
+    {
+        string downloadPath = settings.LocalFolderPath + fileName.Replace("/", "");
+        CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[AzureBlobStorageConnectionStringName].ConnectionString);
+        CloudBlobClient blobClient = account.CreateCloudBlobClient();
+        CloudBlobContainer container = blobClient.GetContainerReference(settings.ContainerName);
+        CloudBlob blob = container.GetBlobReference(fileName);
+        blob.DownloadToFile(downloadPath, FileMode.CreateNew);
+        return downloadPath;
+    }
+
+    public static string ExtractPackage(string localFolderPath, string packageFileName)
+    {
+        string backupFilePath = localFolderPath + packageFileName;
+        using (ZipFile zip = new ZipFile(backupFilePath))
+        {
+            zip.ExtractAll(localFolderPath);
+        }
+        string backupFolderPath = backupFilePath.Replace(".zip", "");
+        return backupFolderPath;
+    }
+
+    public static string RestoreAppData(string localFolderPath, string appDataZipFile, string appDataFolder, bool createBackup = false)
+    {
+        string appDataZipFilePath = localFolderPath + appDataZipFile;
+        bool exists = Directory.Exists(appDataFolder);
+        if (createBackup && exists)
+            Directory.Move(appDataFolder, appDataFolder + "_backup_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        else
+            Directory.Delete(appDataFolder);
+        Directory.CreateDirectory(appDataFolder);
+        using (ZipFile zip = new ZipFile(appDataZipFilePath))
+        {
+            zip.ExtractAll(appDataFolder);
+        }
+        return appDataFolder;
+    }
+
+    public static string RestoreDb(ManagerSettings settings, string backupFileName)
+    {
+        string backupFilePath = settings.LocalFolderPath + backupFileName;
+        string infoMessage = "";
+        using (var connection = new SqlConnection(settings.DbConnectionString))
+        {
+            connection.InfoMessage += (sender, args) => infoMessage += args.Message + Environment.NewLine;
+            connection.Open();
+            bool exists = (int)(new SqlCommand($"SELECT count(*) FROM master.dbo.sysdatabases where name = '{settings.DatabaseName}'", connection).ExecuteScalar()) > 0;
+            //kick all users out (alias close connections) before restore.
+            if (exists) { new SqlCommand($"ALTER DATABASE {settings.DatabaseName} SET Single_User WITH Rollback Immediate", connection).ExecuteNonQuery(); }
+            try
+            {
+                new SqlCommand($"RESTORE DATABASE {settings.DatabaseName} FROM DISK='{backupFilePath}'", connection).ExecuteNonQuery();
+            }
+            finally
+            {
+                if (exists) { new SqlCommand($"ALTER DATABASE {settings.DatabaseName} SET Multi_User", connection).ExecuteNonQuery(); }
+            }
+            connection.Close();
+        }
+        return infoMessage;
+    }
+
+    public static void SetDbOwner(ManagerSettings settings)
+    {
+        if (string.IsNullOrEmpty(settings.DatabaseOwner))
+            return;
+        Server server = new Server(new ServerConnection(new SqlConnection(settings.DbConnectionString)));
+        Database database = server.Databases[settings.DatabaseName];
+        database.SetOwner(settings.DatabaseOwner, true);
+        database.Refresh();
+    }
+
+    public bool DatabaseExists(string databaseName, string dbConnectionString)
+    {
+        try
+        {
+            Server server = new Server(new ServerConnection(new SqlConnection(dbConnectionString)));
+            return server?.Databases.Contains(databaseName) ?? false;
+        }
+        catch (ConnectionFailureException) { return false; }
+    }
+
+    public static string GetDbOwner(string databaseName, string dbConnectionString)
+    {
+        try
+        {
+            Server server = new Server(new ServerConnection(new SqlConnection(dbConnectionString)));
+            Database database = server?.Databases[databaseName];
+            return database?.Owner;
+        }
+        catch (ConnectionFailureException) { return null; }
+    }
+
+    public static string[] CleanAzure(string containerName, string backupInfix, int daysOld, bool simulate = false)
+    {
+        DateTime minAge = DateTime.UtcNow.AddDays(0 - daysOld);
+        var deletedItems = GetListOfBlobStorageItems(containerName)
+            .Where(b =>
+                b.Name.Contains(backupInfix) &&
+                b.Properties.LastModified < minAge)
+            .ToArray();
+        if (!simulate)
+        {
+            foreach (var b in deletedItems)
+            {
+                b.Delete(DeleteSnapshotsOption.IncludeSnapshots);
+            }
+        }
+        return deletedItems.Select(b => b.Name).ToArray();
+    }
+
+    public static IEnumerable<ICloudBlob> GetListOfBlobStorageItems(string containerName, bool recursive = true)
+    {
+        CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[AzureBlobStorageConnectionStringName].ConnectionString);
+        CloudBlobClient blobClient = account.CreateCloudBlobClient();
+        CloudBlobContainer container = blobClient.GetContainerReference(containerName);
+        container.CreateIfNotExists();
+        var blobQuery = container.ListBlobs(null, recursive).OfType<ICloudBlob>() ?? Enumerable.Empty<ICloudBlob>();
+        return blobQuery;
+    }
+
+    /// <summary>
+    /// Tries to find episerver configuration but if it's nor referenced it will return null;
+    /// </summary>
+    public static string TryGetEpiserverAppDataPath()
+    {
+        Type type = Type.GetType("EPiServer.Framework.Configuration.EPiServerFrameworkSection, EPiServer.Framework");
+        Type appDataType = Type.GetType("EPiServer.Framework.Configuration.AppDataElement, EPiServer.Framework");
+        var instance = type?.GetProperty("Instance").GetValue(null);
+        var appDataInstance = type?.GetProperty("AppData")?.GetValue(instance);
+        return appDataType?.GetProperty("BasePath")?.GetValue(appDataInstance) as string;
+        //return EPiServer.Framework.Configuration.EPiServerFrameworkSection.Instance.AppData.BasePath;
+    }
+}
+
+@helper CreateTableFromList(IEnumerable<object> list)
+{
+    object firstItem = list.FirstOrDefault();
+    var firstItemProperties = firstItem?.GetType().GetProperties() ?? new PropertyInfo[] { };
+    <table class="table table-condensed table-hover">
+        <thead>
+            <tr>
+                @foreach (var prd in firstItemProperties)
+                {
+                    <td>@(prd.Name)</td>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var d in list)
+            {
+                <tr>
+                    @foreach (var prd in firstItemProperties)
+                    {
+                        <td>@Html.Raw(prd.GetValue(d))</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
