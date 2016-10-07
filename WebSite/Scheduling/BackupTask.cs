@@ -1,4 +1,7 @@
-﻿using System.Web.Hosting;
+﻿using System;
+using System.IO;
+using System.Net;
+using System.Web.Hosting;
 using AzureBackupManager.Common;
 using FluentScheduler;
 
@@ -10,12 +13,14 @@ namespace AzureBackupManager.Scheduling
         private bool _shuttingDown;
         private readonly ManagerSettings _settings;
         private readonly LogService _logService;
+        private readonly BackupJobSettings _backupJobSettings;
         public string Name { get; set; }
 
-        public BackupTask(ManagerSettings settings, string name)
+        public BackupTask(ManagerSettings settings, string name, BackupJobSettings backupJobSettings, LogService logService = null)
         {
             _settings = settings;
-            _logService = new LogService(_settings.LocalFolderPath);
+            _logService = logService ?? new LogService(_settings.LocalFolderPath);
+            _backupJobSettings = backupJobSettings;
             Name = name;
             HostingEnvironment.RegisterObject(this);
         }
@@ -26,7 +31,22 @@ namespace AzureBackupManager.Scheduling
             {
                 if (_shuttingDown)
                     return;
-                _logService.WriteLog($"BackupTask ({Name}) Executed! {_settings}");
+                var started = DateTime.Now;
+                _logService.WriteLog($"Task STARTED (\"{Name}\")! Query: {_backupJobSettings.Query}.");
+                var resultStatusCode = GetQueryRequestStatusCode(_backupJobSettings.Query);
+                var duration = DateTime.Now.Subtract(started);
+                _logService.WriteLog($"Task FINISHED (\"{Name}\")!! Status Code: {resultStatusCode}, Duration: {duration.TotalMinutes} mins.");
+            }
+        }
+
+        public HttpStatusCode GetQueryRequestStatusCode(string url)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Timeout = 60*60*1000; //(3600000ms = 60mins)
+            request.AutomaticDecompression = DecompressionMethods.GZip;
+            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+            {
+                return response.StatusCode;
             }
         }
 

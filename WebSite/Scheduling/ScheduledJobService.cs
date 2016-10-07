@@ -27,7 +27,7 @@ namespace AzureBackupManager.Scheduling
         public void RemoveJob(BackupJobSettings job)
         {
             var list = _scheduledJobPersistor.GetAll()
-                .Where(j => j.Name != job.Name && j.Interval != job.Interval && j.AtHours != job.AtHours && j.AtMins != job.AtMins)
+                .Where(j => j.Name != job.Name && j.Interval != job.Interval && j.AtHours != job.AtHours && j.AtMins != job.AtMins && j.Query == job.Query)
                 .ToList();
             _scheduledJobPersistor.Store(list.ToArray());
             ResetJobManager();

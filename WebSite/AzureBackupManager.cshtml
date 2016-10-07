@@ -4,7 +4,6 @@
 @using AzureBackupManager.Backups
 @using AzureBackupManager.Common
 @using AzureBackupManager.Scheduling
-@using FluentScheduler
 @using Microsoft.WindowsAzure.Storage
 @using Microsoft.WindowsAzure.Storage.Blob
 @{
@@ -35,364 +34,284 @@
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="page-header">
-        <h1>
-            Azure Backup Manager
-            <a href="#" data-toggle="collapse" data-target="#collapse-info"><span class="badge"><i class="glyphicon glyphicon-info-sign"></i> Information</span></a>
-        </h1>
-        <div id="collapse-info" class="panel-body collapse">
-            <h3>For what?</h3>
-            <p>Azure Backup Manager is mainly targeted for handling backups and restoring data of web site project (like Episerver CMS).
-            Data includes SQL Server Database and AppData folders which are the most common application data storages in Episerver projects.</p>
-            <h3>Why?</h3>
-            <h4>It's designed for following use cases</h4>
-            <ul>
-                <li><b>Managing backup archives</b>
-                    <ul>
-                        <li>List, Create, Delete, Download and Upload backups</li>
-                    </ul>
-                </li>
-                <li><b>Transferring data</b> between environments (Production, Staging, Testing, Dev, Local)</li>
-                <li><b>Helping integration testing</b> (or any other kind of processes which needs to be restored several times)
-                    <ul>
-                        <li>Quickly create/restore snapshots of data so it's easy to rerun the process.</li>
-                        <li>You may even have different snapshots for different test scenarios.</li>
-                    </ul>
-                </li>
-                <li><b>Backups before production deployments</b> or even automate the backups in deployments</li>
-                <li>Scheduling <b>daily, weekly and monthly backups</b></li>
-                <li>Scheduling <b>cleaning of old backups</b></li>
-                <li><b>Works on my machine -problems</b> and easing the problem solving</li>
-                <li>Improving the data integrity by handling full backup packages. Packages are meant to create and restored with the same tools.</li>
-            </ul>
-            <h3>How?</h3>
-            <h4>There are two different ways to run it</h4>
-            <ol>
-                <li><b>Inside of target web site</b> which you are targeting the backups. It can be Episerver web site or any other type. <i>(Easier to maintain)</i></li>
-                <li><b>Parallel web site</b> which will access the project's resources. <i>(More secure way)</i></li>
-            </ol>
-            <h4>Transferring the data</h4>
-            <p>For transferring the data from environment to another, it's required that this tool is installed in all the environments. Only the Azure Blob storage remain the same in all environments.</p>
-            <h4>Backup manager requires lot of privileges</h4>
-            <ul>
-                <li>IIS application pool user needs to have write and delete access to Local Repository -folder. Example folder path C:\Website\BackupManagerRepository\.</li>
-                <li>IIS application pool user needs to have write and delete access to App Data -folder</li>
-                <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
-            </ul>
-            <h4>Dependens on 5 NuGet Packages</h4>
-            <ol>
-                <li><b>WindowsAzure.Storage</b> version="7.2.1"</li>
-                <li><b>DotNetZip</b> version="1.9.1.8"</li>
-                <li><b>Microsoft.SqlServer.ConnectionInfo.dll</b> version="1.0.1"</li>
-                <li><b>Microsoft.SqlServer.Management.Sdk.Sfc.dll</b> version="1.0.1"</li>
-                <li><b>Microsoft.SqlServer.Smo.dll</b> version="1.0.1"</li>
-            </ol>
-            <h3>Installation</h3>
-            <p>Installation depends on how you are planning to run this.</p>
-            <h4>Parallel web site</h4>
-            <ol>
-                <li>Create IIS site based on the GitHub repository sources</li>
-                <li>Enable Basic Authentication for the site.</li>
-                <li>Follow the "Inside of target web site" installation steps from the bullet 3.</li>
-            </ol>
-            <h4>Inside of target web site</h4>
-            <ol>
-                <li>Install NuGet -packages</li>
-                <li>Copy this file</li>
-                <li>Create Azure Blob Storage (type: private)</li>
-                <li>Add 2 ConnectionStrings:
-                    <ol>
-                        <li><b>AzureBackupBlobStorage</b><br/>
-                            Connections string to Azure Blob Storage. <a href="https://azure.microsoft.com/en-us/documentation/articles/storage-configure-connection-string/" target="_blank">Read more</a><br/>
-                            Example: &lt;add name="AzureBackupBlobStorage" connectionString="DefaultEndpointsProtocol=[http|https];AccountName=accountName;AccountKey=accountKey" /&gt;
-                        </li>
-                        <li><b>BackupManager</b><br/>
-                            Connection string to SQL Server (with high user privileges)<br/>
-                            Example: &lt;add name="BackupManager" connectionString="Data Source=(local);Initial Catalog=DatabaseName;User ID=sa;Password=sa_password;Connection Timeout=1800;Integrated Security=False;MultipleActiveResultSets=True" providerName="System.Data.SqlClient" /&gt;
-                        </li>
-                    </ol>
-                </li>
-                <li>Make sure your IIS application user has access to required resources (folders) and SQL Server user (in connection string) has necessary privileges.</li>
-                <li>Backup manager needs to have long timeouts for requests and db connections. This site has 60min (3600secs) timeouts and SQL Connection timeout is set to 30 minutes (1800secs).</li>
-                <li>Start using it!</li>
-            </ol>
-            <p></p>
-            <h3>Security and limitations</h3>
-            <p>This tool is not meant for basic editors or users nor it's meant to very very large backups. It's meant that only developers, devops and hosting "Super Administrators" can use this tool.
-                By default this tool check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators.
-            </p>
+    <div class="container">
+        <div class="page-header">
+            <a class="pull-right btn btn-primary btn-xs" href="?@($"&settings={SettingsUrlParam}")">refresh window</a>
+            <h1>
+                Azure Backup Manager
+                <a href="#" data-toggle="collapse" data-target="#collapse-info"><span class="badge"><i class="glyphicon glyphicon-info-sign"></i> Information</span></a>
+            </h1>
+            <div id="collapse-info" class="panel-body collapse">
+                <h3>For what?</h3>
+                <p>
+                    Azure Backup Manager is mainly targeted for handling backups and restoring data of web site project (like Episerver CMS).
+                    Data includes SQL Server Database and AppData folders which are the most common application data storages in Episerver projects.
+                </p>
+                <h3>Why?</h3>
+                <h4>It's designed for following use cases</h4>
+                <ul>
+                    <li>
+                        <b>Managing backup archives</b>
+                        <ul>
+                            <li>List, Create, Delete, Download and Upload backups</li>
+                        </ul>
+                    </li>
+                    <li><b>Transferring data</b> between environments (Production, Staging, Testing, Dev, Local)</li>
+                    <li>
+                        <b>Helping integration testing</b> (or any other kind of processes which needs to be restored several times)
+                        <ul>
+                            <li>Quickly create/restore snapshots of data so it's easy to rerun the process.</li>
+                            <li>You may even have different snapshots for different test scenarios.</li>
+                        </ul>
+                    </li>
+                    <li><b>Backups before production deployments</b> or even automate the backups in deployments</li>
+                    <li>Scheduling <b>daily, weekly and monthly backups</b></li>
+                    <li>Scheduling <b>cleaning of old backups</b></li>
+                    <li><b>Works on my machine -problems</b> and easing the problem solving</li>
+                    <li>Improving the data integrity by handling full backup packages. Packages are meant to create and restored with the same tools.</li>
+                </ul>
+                <h3>How?</h3>
+                <h4>There are two different ways to run it</h4>
+                <ol>
+                    <li><b>Inside of target web site</b> which you are targeting the backups. It can be Episerver web site or any other type. <i>(Easier to maintain)</i></li>
+                    <li><b>Parallel web site</b> which will access the project's resources. <i>(More secure way)</i></li>
+                </ol>
+                <h4>Transferring the data</h4>
+                <p>For transferring the data from environment to another, it's required that this tool is installed in all the environments. Only the Azure Blob storage remain the same in all environments.</p>
+                <h4>Backup manager requires lot of privileges</h4>
+                <ul>
+                    <li>IIS application pool user needs to have write and delete access to Local Repository -folder. Example folder path C:\Website\BackupManagerRepository\.</li>
+                    <li>IIS application pool user needs to have write and delete access to App Data -folder</li>
+                    <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
+                </ul>
+                <h4>Dependens on 5 NuGet Packages</h4>
+                <ol>
+                    <li><b>WindowsAzure.Storage</b> version="7.2.1"</li>
+                    <li><b>DotNetZip</b> version="1.9.1.8"</li>
+                    <li><b>Microsoft.SqlServer.ConnectionInfo.dll</b> version="1.0.1"</li>
+                    <li><b>Microsoft.SqlServer.Management.Sdk.Sfc.dll</b> version="1.0.1"</li>
+                    <li><b>Microsoft.SqlServer.Smo.dll</b> version="1.0.1"</li>
+                </ol>
+                <h3>Installation</h3>
+                <p>Installation depends on how you are planning to run this.</p>
+                <h4>Parallel web site</h4>
+                <ol>
+                    <li>Create IIS site based on the GitHub repository sources</li>
+                    <li>Enable Basic Authentication for the site.</li>
+                    <li>Follow the "Inside of target web site" installation steps from the bullet 3.</li>
+                </ol>
+                <h4>Inside of target web site</h4>
+                <ol>
+                    <li>Install NuGet -packages</li>
+                    <li>Copy this file</li>
+                    <li>Create Azure Blob Storage (type: private)</li>
+                    <li>
+                        Add 2 ConnectionStrings:
+                        <ol>
+                            <li>
+                                <b>AzureBackupBlobStorage</b><br />
+                                Connections string to Azure Blob Storage. <a href="https://azure.microsoft.com/en-us/documentation/articles/storage-configure-connection-string/" target="_blank">Read more</a><br />
+                                Example: &lt;add name="AzureBackupBlobStorage" connectionString="DefaultEndpointsProtocol=[http|https];AccountName=accountName;AccountKey=accountKey" /&gt;
+                            </li>
+                            <li>
+                                <b>BackupManager</b><br />
+                                Connection string to SQL Server (with high user privileges)<br />
+                                Example: &lt;add name="BackupManager" connectionString="Data Source=(local);Initial Catalog=DatabaseName;User ID=sa;Password=sa_password;Connection Timeout=1800;Integrated Security=False;MultipleActiveResultSets=True" providerName="System.Data.SqlClient" /&gt;
+                            </li>
+                        </ol>
+                    </li>
+                    <li>Make sure your IIS application user has access to required resources (folders) and SQL Server user (in connection string) has necessary privileges.</li>
+                    <li>Backup manager needs to have long timeouts for requests and db connections. This site has 60min (3600secs) timeouts and SQL Connection timeout is set to 30 minutes (1800secs).</li>
+                    <li>Start using it!</li>
+                </ol>
+                <p></p>
+                <h3>Security and limitations</h3>
+                <p>
+                    This tool is not meant for basic editors or users nor it's meant to very very large backups. It's meant that only developers, devops and hosting "Super Administrators" can use this tool.
+                    By default this tool check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators.
+                </p>
 
-        </div>
-    </div>
-
-    <div class="panel panel-default" id="panel1">
-        <div class="panel-heading">
-            <h3 class="panel-title"><a data-toggle="collapse" data-target="#collapse-settings" href="#">Settings <small>show/hide</small></a>
-            </h3>
-        </div>
-        <div id="collapse-settings" class="panel-body panel-collapse collapse @Html.Raw(Request.Params["settings"] != null ? "" : "in")">
-            <form method="POST" role="form" action="@(Request.Url.AbsolutePath)">
-                <div class="form-group">
-                    <label for="">Local Repository Path <small>(IIS application pool user needs to have write and delete access to this folder)</small></label>
-                    <input type="text" name="localFolderPath" value="@Settings.LocalFolderPath" class="form-control" disabled="disabled"/>
-                </div>
-                <div class="form-group">
-                    <label for="">AppData Folder Path <small>(Path to the folder you want to backup/restore)</small></label>
-                    <input type="text" name="appDataFolder" value="@Settings.AppDataFolder" class="form-control"/>
-                </div>
-                <div class="form-group">
-                    <label for="">Blob Storage Container Name <small>(folder name for blob storage)</small></label>
-                    <input type="text" name="containerName" value="@Settings.ContainerName" class="form-control" />
-                </div>
-                <div class="form-group">
-                    <label for="">Database Server Name <small>(Target of the backup/restore operations)</small></label>
-                    <input type="text" name="databaseServerName" value="@Settings.DatabaseServerName" class="form-control" disabled="disabled" />
-                </div>
-                <div class="form-group">
-                    <label for="">Database Name <small>(Target of the backup/restore operations)</small></label>
-                    <input type="text" name="databaseName" value="@Settings.DatabaseName" class="form-control" disabled="disabled" />
-                </div>
-                <div class="form-group">
-                    <label for="">Database owner <small>(owner will get the same privileges to restored database)</small></label>
-                    <input type="text" name="databaseOwner" value="@Settings.DatabaseOwner" class="form-control" disabled="disabled" />
-                </div>
-                <input type="hidden" name="settings" value=""/>
-                <input type="hidden" name="action" value="setSettings"/>
-                <input type="submit" value="Activate" class="btn btn-default"/>
-            </form>
-        </div>
-    </div>
-
-    <hr />
-
-    @if (!string.IsNullOrEmpty(ActionResult))
-    {
-        <div id="result-panel" class="panel panel-primary">
-            <div class="panel-heading">
-                Results <button type="button" class="close" data-target="#result-panel" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
             </div>
-            <div class="panel-body">@Html.Raw(ActionResult)</div>
         </div>
-    }
 
-    <h2>Azure Backup Repository</h2>
-    @{
-        var azureBackups = GetAzureBlobStorageBackups()?
-            .Select(b => new
-            {
-                b.Name,
-                Size = Math.Round(((double)b.Properties.Length / 1000000), 2) + " MB",
-                b.Properties.LastModified,
-                Download = "<a href=\"?action=download" +
-                        $"&file={HttpUtility.UrlEncode(b.Name)}" +
-                        $"&settings={SettingsUrlParam}" +
-                        "\" class=\"btn btn-default btn-xs\">Download to Local</a>",
-            })
-            .ToArray();
-    }
-    
-    @if (azureBackups == null)
-    { <div class="alert alert-danger">Could not connect to Azure Blob Storage. Check the connection string!</div> }
-    else if (!azureBackups.Any())
-    { <div class="alert">No backups in Azure Blob Storage!</div> }
-    else
-    {
-        @CreateTableFromList(azureBackups);
-    }
+        <div class="panel panel-default" id="panel1">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <a data-toggle="collapse" data-target="#collapse-settings" href="#">Settings <small>show/hide</small></a>
+                </h3>
+            </div>
+            <div id="collapse-settings" class="panel-body panel-collapse collapse @Html.Raw(Request.Params["settings"] != null ? "" : "in")">
+                <form method="GET" role="form" action="@(Request.Url.AbsolutePath)">
+                    <div class="form-group">
+                        <label for="">Local Repository Path <small>(IIS application pool user needs to have write and delete access to this folder)</small></label>
+                        <input type="text" name="localFolderPath" value="@Settings.LocalFolderPath" class="form-control" disabled="disabled" />
+                    </div>
+                    <div class="form-group">
+                        <label for="">AppData Folder Path <small>(Path to the folder you want to backup/restore)</small></label>
+                        <input type="text" name="appDataFolder" value="@Settings.AppDataFolder" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label for="">Blob Storage Container Name <small>(folder name for blob storage)</small></label>
+                        <input type="text" name="containerName" value="@Settings.ContainerName" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label for="">Database Server Name <small>(Target of the backup/restore operations)</small></label>
+                        <input type="text" name="databaseServerName" value="@Settings.DatabaseServerName" class="form-control" disabled="disabled" />
+                    </div>
+                    <div class="form-group">
+                        <label for="">Database Name <small>(Target of the backup/restore operations)</small></label>
+                        <input type="text" name="databaseName" value="@Settings.DatabaseName" class="form-control" disabled="disabled" />
+                    </div>
+                    <div class="form-group">
+                        <label for="">Database owner <small>(owner will get the same privileges to restored database)</small></label>
+                        <input type="text" name="databaseOwner" value="@Settings.DatabaseOwner" class="form-control" disabled="disabled" />
+                    </div>
+                    <input type="hidden" name="settings" value="" />
+                    <input type="hidden" name="action" value="setSettings" />
+                    <input type="submit" value="Activate" class="btn btn-default" />
+                </form>
+            </div>
+        </div>
 
-    <hr />
-
-
-    @if (Request.Params["settings"] != null)
-    {
-        if (!Settings.DbExists)
+        @if (!string.IsNullOrEmpty(ActionResult))
         {
-            <div class="alert alert-danger">Could not connect to database. Check the connection string!</div>
+            <div id="result-panel" class="panel panel-primary">
+                <div class="panel-heading">
+                    Results <button type="button" class="close" data-target="#result-panel" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                </div>
+                <div class="panel-body">@Html.Raw(ActionResult)</div>
+            </div>
         }
 
-        <h2>Local Backup Repository</h2>
+        <h2>Azure Backup Repository</h2>
+        @{
+            var azureBackups = GetAzureBlobStorageBackups()?
+                .Select(b => new
+                {
+                    b.Name,
+                    Size = Math.Round(((double)b.Properties.Length / 1000000), 2) + " MB",
+                    b.Properties.LastModified,
+                    Download = "<a href=\"?action=download" +
+                            $"&file={HttpUtility.UrlEncode(b.Name)}" +
+                            $"&settings={SettingsUrlParam}" +
+                            "\" class=\"btn btn-default btn-xs\">Download to Local</a>",
+                })
+                .ToArray();
+        }
 
-        var localBackups = new DirectoryInfo(Settings.LocalFolderPath).GetFiles("*_package.zip").OrderByDescending(f => f.Name)
-            .Select(b => new
-            {
-                b.Name,
-                Size = Math.Round(((double)b.Length / 1000000), 2) + " MB",
-                b.CreationTime,
-                Upload = "<a href=\"?action=upload" +
-                        $"&file={HttpUtility.UrlEncode(b.Name)}" +
-                        $"&settings={SettingsUrlParam}" +
-                        "\" class=\"btn btn-default btn-xs\">Upload to Azure</a>",
-                Restore = "<a href=\"?action=restoreLocal" +
-                        $"&file={HttpUtility.UrlEncode(b.Name)}" +
-                        $"&settings={SettingsUrlParam}" +
-                        "\" onclick=\"return confirm('Are you sure you want to RESTORE this item?');\"" +
-                        " class=\"btn btn-info btn-xs\">Restore</a>",
-                Delete = "<a href=\"?action=deleteLocal" +
-                        $"&file={HttpUtility.UrlEncode(b.Name)}" +
-                        $"&settings={SettingsUrlParam}" +
-                        "\" onclick=\"return confirm('Are you sure you want to DELETE this item?');\"" +
-                        " class=\"btn btn-danger btn-xs\">Delete</a>",
-            })
-            .ToArray();
-
-        @CreateTableFromList(localBackups)
-
-
-        <hr />
-
-        <h2>Backup DB And AppData Folder To Local Repository</h2>
-
-        <form method="POST" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
-            <input type="hidden" name="settings" value="@SettingsSerialized" />
-            <input type="hidden" name="action" value="backupLocal" />
-
-            <div class="form-group">
-                <label class="col-sm-3 control-label" for="">Short Backup Name <br />(optional, no whitespace)</label>
-                <div class="col-sm-9">
-                    <input type="text" name="backupInfix" value="@(Request.Params["backupInfix"] ?? "")" placeholder="daily" class="form-control" />
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-3"></div>
-                <div class="col-sm-9">
-                    <input type="submit" value="BACKUP To Local" class="btn btn-primary" />
-                </div>
-            </div>
-
-        </form>
-
-        <hr />
-
-        <h2>Backup To Azure Repository</h2>
-
-        <form method="POST" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
-            <input type="hidden" name="settings" value="@SettingsSerialized" />
-            <input type="hidden" name="action" value="backupAzure" />
-
-            <div class="form-group">
-                <label class="col-sm-3 control-label" for="">Short Backup Name <br />(optional, no whitespace)</label>
-                <div class="col-sm-9">
-                    <input type="text" name="backupInfix" value="@(Request.Params["backupInfix"] ?? "")" placeholder="daily" class="form-control" />
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-3"></div>
-                <div class="col-sm-9">
-                    <input type="submit" value="BACKUP To Azure" class="btn btn-primary" />
-                </div>
-            </div>
-
-        </form>
-
-        <hr />
-
-        <h2>Clean Old Backups From Azure</h2>
-
-        <form method="POST" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
-            <input type="hidden" name="settings" value="@SettingsSerialized" />
-            <input type="hidden" name="action" value="cleanAzure" />
-
-            <div class="form-group">
-                <label class="col-sm-3 control-label" for="">Filter by backup name</label>
-                <div class="col-sm-9">
-                    <input type="text" name="filterInfix" value="@(Request.Params["filterInfix"] ?? "_daily_")" placeholder="_daily_" class="form-control" />
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-3 control-label" for="">Minimum number of days old</label>
-                <div class="col-sm-9">
-                    <input type="text" name="minDays" value="@(Request.Params["minDays"] ?? "7")" class="form-control" />
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-3"></div>
-                <div class="col-sm-9">
-                    <label class="checkbox-inline" for="simulate">
-                        <input type="checkbox" id="simulate" name="simulate" @(Request.Params["simulate"] == "True" ? "checked" : "") value="True" />
-                        Simulate only (will not delete anything)
-                    </label>
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-3"></div>
-                <div class="col-sm-9">
-                    <input type="submit" value="CLEAN Azure" class="btn btn-danger" onclick="return confirm('Are you sure you want to CLEAN Azure backups?');" />
-                </div>
-            </div>
-
-        </form>
-
-        <hr />
-
-        <h2>Add Scheduled Backup Job</h2>
-
-        <form method="POST" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
-            <input type="hidden" name="settings" value="@SettingsSerialized" />
-            <input type="hidden" name="action" value="addBackupJob" />
-
-            <div class="form-group">
-                <label class="col-sm-3 control-label" for="">Job Name</label>
-                <div class="col-sm-9">
-                    <input type="text" name="jobName" value="@(Request.Params["jobName"] ?? "Daily Backup Job")" class="form-control" />
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-3 control-label" for="">Interval (Days)</label>
-                <div class="col-sm-9">
-                    <input type="text" name="interval" value="@(Request.Params["interval"] ?? "1")" class="form-control"/>
-                </div>
-            </div>
-            <div class="form-inline">
-                <label class="col-sm-3 control-label" for="">Starting Time</label>
-                <div class="col-sm-9">
-                    <label class="control-label" for="">Hours</label>
-                    <input type="text" name="atHours" value="@(Request.Params["atHours"] ?? "23")" class="form-control" />
-                    <label class="control-label" for="">Minutes</label>
-                    <input type="text" name="atMins" value="@(Request.Params["atMins"] ?? "59")" class="form-control" />
-                </div>
-            </div>
-            <div class="form-group">
-            </div>
-
-            <div class="form-group">
-                <div class="col-sm-3"></div>
-                <div class="col-sm-9">
-                    <input type="submit" value="Add Scheduled Job" class="btn btn-primary" />
-                </div>
-            </div>
-
-
-        </form>
-
-        <hr />
-
-        <h2>List Schedule Tasks</h2>
-
-        <form method="POST" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
-            <input type="hidden" name="settings" value="@SettingsSerialized"/>
-            <input type="hidden" name="action" value="listScheduledJobs"/>
-
-            <div class="form-group">
-                <div class="col-sm-3"></div>
-                <div class="col-sm-9">
-                    <input type="submit" value="List Scheduler" class="btn btn-primary" />
-                    <a href="@(Request.Url.AbsolutePath)?action=logs">Read Logs</a>
-                </div>
-            </div>
-
-        </form>
-
-        if(Request.Params["action"] == "listScheduledJobs")
+        @if (azureBackups == null)
+        { <div class="alert alert-danger">Could not connect to Azure Blob Storage. Check the connection string!</div> }
+        else if (!azureBackups.Any())
+        { <div class="alert">No backups in Azure Blob Storage!</div> }
+        else
         {
+            @CreateTableFromList(azureBackups);
+        }
+
+
+        @if (Request.Params["settings"] != null)
+        {
+            if (!Settings.DbExists)
+            {
+                <div class="alert alert-danger">Could not connect to database. Check the connection string!</div>
+            }
+
+            <div class="panel panel-default" id="panel-cleanAzure">
+                <div class="panel-heading">
+                    <h2 class="panel-title">
+                        <a data-toggle="collapse" data-target="#collapse-cleanAzure" href="#panel-cleanAzure">
+                            Backup To Azure Repository <small>show/hide</small>
+                        </a>
+                    </h2>
+                </div>
+                <div id="collapse-cleanAzure" class="panel-body panel-collapse collapse">
+                    <form method="GET" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
+                        <input type="hidden" name="settings" value="@SettingsSerialized" />
+                        <input type="hidden" name="action" value="backupAzure" />
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Short Backup Name <br />(optional, no whitespace)</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="backupInfix" value="@(Request.Params["backupInfix"] ?? "")" placeholder="daily" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <input type="submit" value="BACKUP To Azure" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <h2>Local Backup Repository</h2>
+
+            var localBackups = new DirectoryInfo(Settings.LocalFolderPath).GetFiles("*_package.zip").OrderByDescending(f => f.Name)
+                .Select(b => new
+                {
+                    b.Name,
+                    Size = Math.Round(((double)b.Length / 1000000), 2) + " MB",
+                    b.CreationTime,
+                    Upload = "<a href=\"?action=upload" +
+                            $"&file={HttpUtility.UrlEncode(b.Name)}" +
+                            $"&settings={SettingsUrlParam}" +
+                            "\" class=\"btn btn-default btn-xs\">Upload to Azure</a>",
+                    Restore = "<a href=\"?action=restoreLocal" +
+                            $"&file={HttpUtility.UrlEncode(b.Name)}" +
+                            $"&settings={SettingsUrlParam}" +
+                            "\" onclick=\"return confirm('Are you sure you want to RESTORE this item?');\"" +
+                            " class=\"btn btn-info btn-xs\">Restore</a>",
+                    Delete = "<a href=\"?action=deleteLocal" +
+                            $"&file={HttpUtility.UrlEncode(b.Name)}" +
+                            $"&settings={SettingsUrlParam}" +
+                            "\" onclick=\"return confirm('Are you sure you want to DELETE this item?');\"" +
+                            " class=\"btn btn-danger btn-xs\">Delete</a>",
+                })
+                .ToArray();
+
+            @CreateTableFromList(localBackups)
+
+            <div class="panel panel-default" id="panel-backupLocal">
+                <div class="panel-heading">
+                    <h2 class="panel-title">
+                        <a data-toggle="collapse" data-target="#collapse-backupLocal" href="#panel-backupLocal">
+                            Backup DB And AppData Folder To Local Repository <small>show/hide</small>
+                        </a>
+                    </h2>
+                </div>
+                <div id="collapse-backupLocal" class="panel-body panel-collapse collapse">
+                    <form method="GET" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
+                        <input type="hidden" name="settings" value="@SettingsSerialized" />
+                        <input type="hidden" name="action" value="backupLocal" />
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Short Backup Name <br />(optional, no whitespace)</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="backupInfix" value="@(Request.Params["backupInfix"] ?? "")" placeholder="daily" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <input type="submit" value="BACKUP To Local" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <a class="pull-right btn btn-primary btn-xs" href="?action=logs">read logs</a>
+            <h2>Local Scheduled Jobs</h2>
             var jobs = ScheduledJobService.GetJobSettingsAndSchedule()
                 .Select(t => new
                 {
                     t.Item1.Name,
                     t.Item1.Interval,
-                    AtTime = $"{t.Item1.AtHours}:{t.Item1.AtMins}",
+                    AtTime = $"{t.Item1.AtHours.ToString("d2")}:{t.Item1.AtMins.ToString("d2")}",
                     t.Item2.NextRun,
                     t.Item2.Disabled,
+                    Query = t.Item1.Query?.Replace(CurrentUrlFullPath, ""),
                     Delete = "<a href=\"?action=removeBackupJob" +
                         $"&jobName={HttpUtility.UrlEncode(t.Item1.Name)}" +
                         $"&settings={SettingsUrlParam}" +
@@ -401,12 +320,114 @@
                 });
 
             @CreateTableFromList(jobs)
-            <hr/>
-        }
 
-        <hr />
-    }
-</div>
+            <div class="panel panel-default" id="panel-addBackupJob">
+                <div class="panel-heading">
+                    <h2 class="panel-title">
+                        <a data-toggle="collapse" data-target="#collapse-addBackupJob" href="#panel-addBackupJob">
+                            Create Scheduled Job <small>show/hide</small>
+                        </a>
+                    </h2>
+                </div>
+                <div id="collapse-addBackupJob" class="panel-body panel-collapse collapse">
+
+                    <form method="GET" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
+                        <input type="hidden" name="settings" value="@SettingsSerialized" />
+                        <input type="hidden" name="action" value="addBackupJob" />
+                        <input type="hidden" name="queryFullPath" value="@(CurrentUrlFullPath)" />
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Job Name<small>(unique)</small></label>
+                            <div class="col-sm-9">
+                                <input type="text" name="jobName" value="@(Request.Params["jobName"] ?? "Daily Azure Backup Job")" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Interval (Days)</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="interval" value="@(Request.Params["interval"] ?? "1")" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group form-inline">
+                            <label class="col-sm-3 control-label" for="">Starting Time</label>
+                            <div class="col-sm-9">
+                                <label class="control-label" for="">Hours</label>
+                                <input type="text" name="atHours" value="@(Request.Params["atHours"] ?? "23")" class="form-control" />
+                                <label class="control-label" for="">Minutes</label>
+                                <input type="text" name="atMins" value="@(Request.Params["atMins"] ?? "59")" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Query Parameters</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="queryParams" value="@(Request.Params["queryParams"] ?? "?action=backupAzure&backupInfix=daily-backup")" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <input type="submit" value="Create Scheduled Job" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+            <hr/>
+
+            <div class="panel panel-default" id="panel-backupAzure">
+                <div class="panel-heading">
+                    <h2 class="panel-title">
+                        <a data-toggle="collapse" data-target="#collapse-backupAzure" href="#panel-backupAzure">
+                            Clean Old Backups From Azure <small>show/hide</small>
+                        </a>
+                    </h2>
+                </div>
+                <div id="collapse-backupAzure" class="panel-body panel-collapse collapse">
+
+                    <form method="GET" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
+                        <input type="hidden" name="settings" value="@SettingsSerialized" />
+                        <input type="hidden" name="action" value="backupAzure" />
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Filter by backup name</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="filterInfix" value="@(Request.Params["filterInfix"] ?? "_daily_")" placeholder="_daily_" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Minimum number of days old</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="minDays" value="@(Request.Params["minDays"] ?? "7")" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <label class="checkbox-inline" for="simulate">
+                                    <input type="checkbox" id="simulate" name="simulate" @(Request.Params["simulate"] == "True" ? "checked" : "") value="True" />
+                                    Simulate (will not delete anything)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <input type="submit" value="CLEAN Azure" class="btn btn-danger" onclick="return confirm('Are you sure you want to CLEAN Azure backups?');" />
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <hr />
+        }
+    </div>
+
+
+
 </body>
 </html>
 @functions
@@ -475,15 +496,16 @@
                         Interval = int.Parse(Request.Params["interval"]),
                         AtHours = int.Parse(Request.Params["atHours"]),
                         AtMins = int.Parse(Request.Params["atMins"]),
+                        Query = Request.Params["queryFullPath"] + Request.Params["queryParams"],
                         ManagerSettins = Settings,
                     });
-                ActionResult = "Scheduled job is started!";
+                ActionResult = "Scheduled job is CREATED!";
                 break;
             case "removeBackupJob":
                 ScheduledJobService.RemoveJob(Request.Params["jobName"]);
-                ActionResult = "Scheduled job is started!";
+                ActionResult = "Scheduled job is DELETED!";
                 break;
-            case "writeLog":
+            case "testLog":
                 LogService.WriteLog("Hello logs");
                 break;
             case "logs":
@@ -496,6 +518,16 @@
         }
     }
 
+    internal string _currentUrlFullPath;
+    public string CurrentUrlFullPath
+    {
+        get
+        {
+            if (_currentUrlFullPath != null) return _currentUrlFullPath;
+            if (Request?.Url == null) return null;
+            return _currentUrlFullPath = $"{Request.Url.Scheme}://{Request.Url.Host}{Request.Url.AbsolutePath}";
+        }
+    }
 
     public ICloudBlob[] GetAzureBlobStorageBackups()
     {
