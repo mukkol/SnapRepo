@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace AzureBackupManager.Code
+namespace AzureBackupManager.Common
 {
     public class LogService
     {
@@ -21,12 +21,15 @@ namespace AzureBackupManager.Code
         }
         public string ReadLog()
         {
-            using (StreamReader file = new StreamReader(GetFilename(), Encoding.UTF8))
+            try
             {
+                StreamReader file = new StreamReader(GetFilename(), Encoding.UTF8);
                 var s = file.ReadToEnd();
                 file.Close();
                 return s;
             }
+            catch (FileNotFoundException)
+            { return null; }
         }
         public string GetFilename()
         {

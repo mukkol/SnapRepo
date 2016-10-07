@@ -1,7 +1,9 @@
 ﻿@inherits System.Web.WebPages.WebPage
 @using System.Reflection
-@using AzureBackupManager
-@using AzureBackupManager.Code
+@using AzureBackupManager.Azure
+@using AzureBackupManager.Backups
+@using AzureBackupManager.Common
+@using AzureBackupManager.Scheduling
 @using FluentScheduler
 @using Microsoft.WindowsAzure.Storage
 @using Microsoft.WindowsAzure.Storage.Blob
@@ -383,11 +385,23 @@
 
         if(Request.Params["action"] == "listScheduledJobs")
         {
-            var r = JobManager.AllSchedules.FirstOrDefault();
-            @CreateTableFromList(JobManager.AllSchedules);
+            var jobs = ScheduledJobService.GetJobSettingsAndSchedule()
+                .Select(t => new
+                {
+                    t.Item1.Name,
+                    t.Item1.Interval,
+                    AtTime = $"{t.Item1.AtHours}:{t.Item1.AtMins}",
+                    t.Item2.NextRun,
+                    t.Item2.Disabled,
+                    Delete = "<a href=\"?action=removeBackupJob" +
+                        $"&jobName={HttpUtility.UrlEncode(t.Item1.Name)}" +
+                        $"&settings={SettingsUrlParam}" +
+                        "\" onclick=\"return confirm('Are you sure you want to DELETE this item?');\"" +
+                        " class=\"btn btn-danger btn-xs\">Delete</a>",
+                });
+
+            @CreateTableFromList(jobs)
             <hr/>
-            var jobs = new ScheduledJobPersistor(Settings.LocalFolderPath).GetAll();
-            @CreateTableFromList(jobs, new [] { "ManagerSettins" });
         }
 
         <hr />
@@ -401,6 +415,7 @@
     public ManagerSettings Settings;
     public BackupService BackupService;
     public ScheduledJobService ScheduledJobService;
+    public BlobStorageService BlobStorageService;
     public LogService LogService;
     public string SettingsSerialized => Json.Encode(Settings);
     public string SettingsUrlParam => HttpUtility.UrlEncode(SettingsSerialized);
@@ -411,9 +426,10 @@
                 ? BackupService.CreateSettingsFromParamsOrDefault(Request.Params)
                 : Json.Decode<ManagerSettings>(Request.Params["settings"]);
 
-        BackupService = new BackupService(Settings);
         LogService = new LogService(Settings.LocalFolderPath);
         ScheduledJobService = new ScheduledJobService(Settings.LocalFolderPath, new ScheduledJobPersistor(Settings.LocalFolderPath));
+        BlobStorageService = new BlobStorageService(Settings);
+        BackupService = new BackupService(Settings, BlobStorageService);
 
         switch (Request.Params["action"])
         {
@@ -422,11 +438,11 @@
                 Directory.CreateDirectory(Settings.LocalFolderPath);
                 break;
             case "download":
-                BackupService.DownloadPackage(Request.Params["file"]);
+                BlobStorageService.DownloadPackage(Request.Params["file"]);
                 ActionResult = $"File ({Request.Params["file"]}) is downloaded to Local Repository!";
                 break;
             case "upload":
-                var backupUri = BackupService.SendBackupPackage(Request.Params["file"]);
+                var backupUri = BlobStorageService.SendBackupPackage(Request.Params["file"]);
                 ActionResult = $"File ({Request.Params["file"]}) has been uploaded into Azure Repository! Backup URI: {backupUri}.";
                 break;
             case "deleteLocal":
@@ -448,7 +464,7 @@
                 break;
             case "cleanAzure":
                 bool simulate = bool.Parse(Request.Params["simulate"] ?? "False");
-                string[] deletedFileNames = BackupService.CleanAzure(Request.Params["filterInfix"], int.Parse(Request.Params["minDays"]), simulate);
+                string[] deletedFileNames = BlobStorageService.CleanAzure(Request.Params["filterInfix"], int.Parse(Request.Params["minDays"]), simulate);
                 ActionResult = $"{deletedFileNames.Count()} file(s) were deleted from Azure! {(simulate ? "Simulating!!!": "")}<br/>{string.Join("<br/>", deletedFileNames)}";
                 break;
             case "addBackupJob":
@@ -483,7 +499,7 @@
 
     public ICloudBlob[] GetAzureBlobStorageBackups()
     {
-        try { return BackupService.GetListOfBlobStorageItems().ToArray(); }
+        try { return BlobStorageService.GetListOfBlobStorageItems().ToArray(); }
         catch (StorageException) { return null; }
         catch (FormatException) { return null; }
     }

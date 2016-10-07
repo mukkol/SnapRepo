@@ -1,7 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using FluentScheduler;
 
-namespace AzureBackupManager.Code
+namespace AzureBackupManager.Scheduling
 {
     public class ScheduledJobService
     {
@@ -40,7 +41,12 @@ namespace AzureBackupManager.Code
             ResetJobManager();
         }
 
-        public BackupJobSettings[] GetAll()
+        public Tuple<BackupJobSettings, Schedule>[] GetJobSettingsAndSchedule()
+        {
+            return _scheduledJobPersistor.GetAll().Select(s => new Tuple<BackupJobSettings, Schedule>(s, JobManager.GetSchedule(s.Name))).ToArray();
+        }
+
+        public BackupJobSettings[] GetBackupJobSettingses()
         {
             return _scheduledJobPersistor.GetAll();
         }

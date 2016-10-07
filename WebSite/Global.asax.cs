@@ -1,5 +1,7 @@
 ﻿using System;
-using AzureBackupManager.Code;
+using AzureBackupManager.Backups;
+using AzureBackupManager.Common;
+using AzureBackupManager.Scheduling;
 using FluentScheduler;
 
 namespace AzureBackupManager

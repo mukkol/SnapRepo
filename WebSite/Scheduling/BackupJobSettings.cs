@@ -1,6 +1,7 @@
 ﻿using System.Web.Helpers;
+using AzureBackupManager.Common;
 
-namespace AzureBackupManager.Code
+namespace AzureBackupManager.Scheduling
 {
     public class BackupJobSettings
     {

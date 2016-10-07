@@ -1,6 +1,6 @@
 ﻿using System.Web.Helpers;
 
-namespace AzureBackupManager.Code
+namespace AzureBackupManager.Common
 {
     public class ManagerSettings
     {

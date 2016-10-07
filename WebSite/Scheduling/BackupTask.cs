@@ -1,20 +1,9 @@
 ﻿using System.Web.Hosting;
+using AzureBackupManager.Common;
 using FluentScheduler;
 
-namespace AzureBackupManager.Code
+namespace AzureBackupManager.Scheduling
 {
-    public class BackupRegistry : Registry
-    {
-        public BackupRegistry(string localFolderPath)
-        {
-            var jobs = new ScheduledJobPersistor(localFolderPath).GetAll();
-            foreach (var j in jobs)
-            {
-                Schedule(new BackupTask(j.ManagerSettins, j.Name)).WithName(j.Name).ToRunEvery(j.Interval).Days().At(j.AtHours, j.AtMins);
-            }
-        }
-    }
-
     public class BackupTask : IJob, IRegisteredObject
     {
         private readonly object _lock = new object();
@@ -23,7 +12,7 @@ namespace AzureBackupManager.Code
         private readonly LogService _logService;
         public string Name { get; set; }
 
-        public BackupTask(ManagerSettings settings, string name) : base()
+        public BackupTask(ManagerSettings settings, string name)
         {
             _settings = settings;
             _logService = new LogService(_settings.LocalFolderPath);
@@ -51,5 +40,4 @@ namespace AzureBackupManager.Code
             HostingEnvironment.UnregisterObject(this);
         }
     }
-
 }

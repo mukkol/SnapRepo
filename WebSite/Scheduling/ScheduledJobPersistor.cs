@@ -2,7 +2,7 @@
 using System.Text;
 using System.Web.Helpers;
 
-namespace AzureBackupManager.Code
+namespace AzureBackupManager.Scheduling
 {
     public class ScheduledJobPersistor
     {

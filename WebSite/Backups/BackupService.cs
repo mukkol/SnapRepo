@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Configuration;
 using System.Data.SqlClient;
@@ -7,25 +6,28 @@ using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Hosting;
+using AzureBackupManager.Azure;
+using AzureBackupManager.Common;
 using Ionic.Zip;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 using Microsoft.Web.Administration;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
 
-namespace AzureBackupManager.Code
+namespace AzureBackupManager.Backups
 {
     public class BackupService
     {
         public const string BackupManagerConnectionStringName = "BackupManager";
         public const string AzureBlobStorageConnectionStringName = "AzureBackupBlobStorage";
         private readonly ManagerSettings _settings;
+        private readonly BlobStorageService _blobStorageService;
 
-        public BackupService(ManagerSettings psettings)
+        public BackupService(ManagerSettings psettings, BlobStorageService blobStorageService)
         {
             _settings = psettings;
+            _blobStorageService = blobStorageService;
         }
+
         public static ManagerSettings CreateSettingsFromParamsOrDefault(NameValueCollection requestParams = null)
         {
             if(requestParams == null) requestParams = new NameValueCollection();
@@ -72,7 +74,7 @@ namespace AzureBackupManager.Code
         public string BackupAzure(string backupInfix)
         {
             var backupFileName = BackupLocal(backupInfix);
-            var uri = SendBackupPackage(backupFileName);
+            var uri = _blobStorageService.SendBackupPackage(backupFileName);
             File.Delete(_settings.LocalFolderPath + backupFileName);
             return uri;
         }
@@ -107,7 +109,7 @@ namespace AzureBackupManager.Code
 
         public string BackupDb(out string infoMessage)
         {
-            //TODO: new database needs to relocate the files (.mdf and .lgf files)
+            //TODO: for new database needs to relocate the files (.mdf and .lgf files)
             var backupFileName = $"{_settings.DatabaseName}_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{Environment.MachineName}_db.bak";
             string info = "";
             using (var connection = new SqlConnection(_settings.DbConnectionString))
@@ -149,32 +151,6 @@ namespace AzureBackupManager.Code
                 zip.Save(_settings.LocalFolderPath + zipFileName);
             }
             return zipFileName;
-        }
-
-        public string SendBackupPackage(string backupFileName)
-        {
-
-            CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[AzureBlobStorageConnectionStringName].ConnectionString);
-            CloudBlobClient blobClient = account.CreateCloudBlobClient();
-            CloudBlobContainer container = blobClient.GetContainerReference(_settings.ContainerName);
-            container.CreateIfNotExists();
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference(backupFileName);
-            using (var fileStream = File.OpenRead($"{_settings.LocalFolderPath}{backupFileName}"))
-            {
-                blockBlob.UploadFromStream(fileStream);
-            }
-            return blockBlob.Uri.ToString();
-        }
-
-        public string DownloadPackage(string fileName)
-        {
-            string downloadPath = _settings.LocalFolderPath + fileName.Replace("/", "");
-            CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[AzureBlobStorageConnectionStringName].ConnectionString);
-            CloudBlobClient blobClient = account.CreateCloudBlobClient();
-            CloudBlobContainer container = blobClient.GetContainerReference(_settings.ContainerName);
-            CloudBlob blob = container.GetBlobReference(fileName);
-            blob.DownloadToFile(downloadPath, FileMode.CreateNew);
-            return downloadPath;
         }
 
         public string ExtractPackage(string localFolderPath, string packageFileName)
@@ -257,34 +233,6 @@ namespace AzureBackupManager.Code
                 return database?.Owner;
             }
             catch (ConnectionFailureException) { return null; }
-        }
-
-        public string[] CleanAzure(string backupInfix, int daysOld, bool simulate = false)
-        {
-            DateTime minAge = DateTime.UtcNow.AddDays(0 - daysOld);
-            var deletedItems = GetListOfBlobStorageItems()
-                .Where(b =>
-                    b.Name.Contains(backupInfix) &&
-                    b.Properties.LastModified < minAge)
-                .ToArray();
-            if (!simulate)
-            {
-                foreach (var b in deletedItems)
-                {
-                    b.Delete(DeleteSnapshotsOption.IncludeSnapshots);
-                }
-            }
-            return deletedItems.Select(b => b.Name).ToArray();
-        }
-
-        public IEnumerable<ICloudBlob> GetListOfBlobStorageItems(bool recursive = true)
-        {
-            CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[AzureBlobStorageConnectionStringName].ConnectionString);
-            CloudBlobClient blobClient = account.CreateCloudBlobClient();
-            CloudBlobContainer container = blobClient.GetContainerReference(_settings.ContainerName);
-            container.CreateIfNotExists();
-            var blobQuery = container.ListBlobs(null, recursive).OfType<ICloudBlob>() ?? Enumerable.Empty<ICloudBlob>();
-            return blobQuery;
         }
 
         /// <summary>
