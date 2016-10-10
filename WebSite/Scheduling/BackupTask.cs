@@ -1,8 +1,9 @@
 ﻿using System;
-using System.IO;
-using System.Net;
+using System.Collections.Specialized;
+using System.Web;
 using System.Web.Hosting;
 using AzureBackupManager.Common;
+using AzureBackupManager.Common.IoC;
 using FluentScheduler;
 
 namespace AzureBackupManager.Scheduling
@@ -12,16 +13,14 @@ namespace AzureBackupManager.Scheduling
         private readonly object _lock = new object();
         private bool _shuttingDown;
         private readonly ManagerSettings _settings;
-        private readonly LogService _logService;
         private readonly BackupJobSettings _backupJobSettings;
         public string Name { get; set; }
 
-        public BackupTask(ManagerSettings settings, string name, BackupJobSettings backupJobSettings, LogService logService = null)
+        public BackupTask(ManagerSettings settings, BackupJobSettings jobSettings)
         {
             _settings = settings;
-            _logService = logService ?? new LogService(_settings.LocalFolderPath);
-            _backupJobSettings = backupJobSettings;
-            Name = name;
+            _backupJobSettings = jobSettings;
+            Name = jobSettings.Name;
             HostingEnvironment.RegisterObject(this);
         }
 
@@ -32,22 +31,19 @@ namespace AzureBackupManager.Scheduling
                 if (_shuttingDown)
                     return;
                 var started = DateTime.Now;
-                _logService.WriteLog($"Task STARTED (\"{Name}\")! Query: {_backupJobSettings.Query}.");
-                var resultStatusCode = GetQueryRequestStatusCode(_backupJobSettings.Query);
+                var logService = ObjectFactory.Container.GetInstance<LogService>();
+                logService.WriteLog($"Task STARTED (\"{Name}\")! Query: {_backupJobSettings.Query}.");
+                var result = GetQueryRequestStatusCode(_backupJobSettings.Query, _settings);
                 var duration = DateTime.Now.Subtract(started);
-                _logService.WriteLog($"Task FINISHED (\"{Name}\")!! Status Code: {resultStatusCode}, Duration: {duration.TotalMinutes} mins.");
+                logService.WriteLog($"Task FINISHED (\"{Name}\")!! Duration: {duration.TotalMinutes} mins, Result: {result}.");
             }
         }
 
-        public HttpStatusCode GetQueryRequestStatusCode(string url)
+        public static string GetQueryRequestStatusCode(string queryString, ManagerSettings settings)
         {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.Timeout = 60*60*1000; //(3600000ms = 60mins)
-            request.AutomaticDecompression = DecompressionMethods.GZip;
-            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-            {
-                return response.StatusCode;
-            }
+            var actionService = ObjectFactory.Container.GetInstance<ActionService>();
+            NameValueCollection parms = HttpUtility.ParseQueryString(queryString);
+            return actionService.CreateActionResult(parms, settings);
         }
 
         public void Stop(bool immediate)

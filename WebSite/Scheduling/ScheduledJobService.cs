@@ -6,13 +6,13 @@ namespace AzureBackupManager.Scheduling
 {
     public class ScheduledJobService
     {
-        private readonly string _localFolderPath;
         private readonly ScheduledJobPersistor _scheduledJobPersistor;
+        private readonly BackupRegistry _backupRegistry;
 
-        public ScheduledJobService(string localFolderPath, ScheduledJobPersistor scheduledJobPersistor)
+        public ScheduledJobService(ScheduledJobPersistor scheduledJobPersistor, BackupRegistry backupRegistry)
         {
-            _localFolderPath = localFolderPath;
             _scheduledJobPersistor = scheduledJobPersistor;
+            _backupRegistry = backupRegistry;
         }
 
         public void AddJob(BackupJobSettings job)
@@ -57,7 +57,7 @@ namespace AzureBackupManager.Scheduling
             {
                 JobManager.RemoveJob(schedule.Name);
             }
-            JobManager.Initialize(new BackupRegistry(_localFolderPath));
+            JobManager.Initialize(_backupRegistry);
         }
 
     }

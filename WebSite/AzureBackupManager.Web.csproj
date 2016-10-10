@@ -56,6 +56,14 @@
       <HintPath>..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="StructureMap, Version=3.1.8.419, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\structuremap.3.1.8.419\lib\net40\StructureMap.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="StructureMap.Net4, Version=3.1.8.419, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\structuremap.3.1.8.419\lib\net40\StructureMap.Net4.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Web.DynamicData" />
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
@@ -141,6 +149,10 @@
   <ItemGroup>
     <Compile Include="Azure\BlobStorageService.cs" />
     <Compile Include="Backups\BackupService.cs" />
+    <Compile Include="Common\ActionService.cs" />
+    <Compile Include="Common\IoC\ObjectFactory.cs" />
+    <Compile Include="Common\IoC\StructureMapDependencyResolver.cs" />
+    <Compile Include="Common\SettingsFactory.cs" />
     <Compile Include="Common\LogService.cs" />
     <Compile Include="Scheduling\BackupJobSettings.cs" />
     <Compile Include="Scheduling\BackupTask.cs" />

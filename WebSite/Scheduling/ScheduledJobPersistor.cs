@@ -1,16 +1,17 @@
 ﻿using System.IO;
 using System.Text;
 using System.Web.Helpers;
+using AzureBackupManager.Common;
 
 namespace AzureBackupManager.Scheduling
 {
     public class ScheduledJobPersistor
     {
         private readonly string _localFolderPath;
-
-        public ScheduledJobPersistor(string localFolderPath)
+        
+        public ScheduledJobPersistor()
         {
-            _localFolderPath = localFolderPath;
+            _localFolderPath = SettingsFactory.GetStaticLocalFolderPath();
         }
 
         public void Store(BackupJobSettings[] backupJobs)

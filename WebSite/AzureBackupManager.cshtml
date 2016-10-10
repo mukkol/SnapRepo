@@ -1,8 +1,8 @@
 ﻿@inherits System.Web.WebPages.WebPage
 @using System.Reflection
 @using AzureBackupManager.Azure
-@using AzureBackupManager.Backups
 @using AzureBackupManager.Common
+@using AzureBackupManager.Common.IoC
 @using AzureBackupManager.Scheduling
 @using Microsoft.WindowsAzure.Storage
 @using Microsoft.WindowsAzure.Storage.Blob
@@ -36,7 +36,7 @@
 <body>
     <div class="container">
         <div class="page-header">
-            <a class="pull-right btn btn-primary btn-xs" href="?@($"&settings={SettingsUrlParam}")">refresh window</a>
+            <a class="pull-right btn btn-primary btn-xs" href="?@($"&settings={SettingsUrlParam}")">refresh window (without action)</a>
             <h1>
                 Azure Backup Manager
                 <a href="#" data-toggle="collapse" data-target="#collapse-info"><span class="badge"><i class="glyphicon glyphicon-info-sign"></i> Information</span></a>
@@ -168,7 +168,7 @@
                     </div>
                     <input type="hidden" name="settings" value="" />
                     <input type="hidden" name="action" value="setSettings" />
-                    <input type="submit" value="Activate" class="btn btn-default" />
+                    <input type="submit" value="Activate" class="btn btn-primary" />
                 </form>
             </div>
         </div>
@@ -311,7 +311,7 @@
                     AtTime = $"{t.Item1.AtHours.ToString("d2")}:{t.Item1.AtMins.ToString("d2")}",
                     t.Item2.NextRun,
                     t.Item2.Disabled,
-                    Query = t.Item1.Query?.Replace(CurrentUrlFullPath, ""),
+                    Query = t.Item1.Query,
                     Delete = "<a href=\"?action=removeBackupJob" +
                         $"&jobName={HttpUtility.UrlEncode(t.Item1.Name)}" +
                         $"&settings={SettingsUrlParam}" +
@@ -334,7 +334,6 @@
                     <form method="GET" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
                         <input type="hidden" name="settings" value="@SettingsSerialized" />
                         <input type="hidden" name="action" value="addBackupJob" />
-                        <input type="hidden" name="queryFullPath" value="@(CurrentUrlFullPath)" />
 
                         <div class="form-group">
                             <label class="col-sm-3 control-label" for="">Job Name<small>(unique)</small></label>
@@ -434,9 +433,9 @@
 {
     public string ActionResult;
     public ManagerSettings Settings;
-    public BackupService BackupService;
     public ScheduledJobService ScheduledJobService;
     public BlobStorageService BlobStorageService;
+    public ActionService ActionService;
     public LogService LogService;
     public string SettingsSerialized => Json.Encode(Settings);
     public string SettingsUrlParam => HttpUtility.UrlEncode(SettingsSerialized);
@@ -444,94 +443,29 @@
     public void OnLoad()
     {
         Settings = (string.IsNullOrEmpty(Request.Params["settings"]) || Request.Params["action"] != "setSettings")
-                ? BackupService.CreateSettingsFromParamsOrDefault(Request.Params)
+                ? SettingsFactory.CreateSettingsFromParamsOrDefault(Request.Params)
                 : Json.Decode<ManagerSettings>(Request.Params["settings"]);
 
-        LogService = new LogService(Settings.LocalFolderPath);
-        ScheduledJobService = new ScheduledJobService(Settings.LocalFolderPath, new ScheduledJobPersistor(Settings.LocalFolderPath));
-        BlobStorageService = new BlobStorageService(Settings);
-        BackupService = new BackupService(Settings, BlobStorageService);
+        ScheduledJobService = ObjectFactory.Container.GetInstance<ScheduledJobService>();
+        BlobStorageService = ObjectFactory.Container.GetInstance<BlobStorageService>();
+        LogService = ObjectFactory.Container.GetInstance<LogService>();
+        ActionService = ObjectFactory.Container.GetInstance<ActionService>();
 
-        switch (Request.Params["action"])
+        ActionResult = ActionService.CreateActionResult(Request.Params, Settings);
+        if (Request.Params["action"] == "logs")
         {
-            case "setSettings":
-                //Creates the directory if it does not exist or throws an error if IIS user does not have privileges.
-                Directory.CreateDirectory(Settings.LocalFolderPath);
-                break;
-            case "download":
-                BlobStorageService.DownloadPackage(Request.Params["file"]);
-                ActionResult = $"File ({Request.Params["file"]}) is downloaded to Local Repository!";
-                break;
-            case "upload":
-                var backupUri = BlobStorageService.SendBackupPackage(Request.Params["file"]);
-                ActionResult = $"File ({Request.Params["file"]}) has been uploaded into Azure Repository! Backup URI: {backupUri}.";
-                break;
-            case "deleteLocal":
-                string fileFullPath = Settings.LocalFolderPath + Request.Params["file"];
-                File.Delete(fileFullPath);
-                ActionResult = $"File ({fileFullPath}) is deleted!";
-                break;
-            case "backupLocal":
-                string backupFileName = BackupService.BackupLocal(Request.Params["backupInfix"]);
-                ActionResult = $"Backup Created ({backupFileName}) in Local Repository!";
-                break;
-            case "restoreLocal":
-                BackupService.RestoreLocal(Request.Params["file"]);
-                ActionResult = $"Backup ({Request.Params["file"]}) restored!";
-                break;
-            case "backupAzure":
-                string backupAzureUri = BackupService.BackupAzure(Request.Params["backupInfix"]);
-                ActionResult = $"Backup Created ({backupAzureUri}) and uploaded in Azure!";
-                break;
-            case "cleanAzure":
-                bool simulate = bool.Parse(Request.Params["simulate"] ?? "False");
-                string[] deletedFileNames = BlobStorageService.CleanAzure(Request.Params["filterInfix"], int.Parse(Request.Params["minDays"]), simulate);
-                ActionResult = $"{deletedFileNames.Count()} file(s) were deleted from Azure! {(simulate ? "Simulating!!!": "")}<br/>{string.Join("<br/>", deletedFileNames)}";
-                break;
-            case "addBackupJob":
-                ScheduledJobService.AddJob(
-                    new BackupJobSettings()
-                    {
-                        Name = Request.Params["jobName"],
-                        Interval = int.Parse(Request.Params["interval"]),
-                        AtHours = int.Parse(Request.Params["atHours"]),
-                        AtMins = int.Parse(Request.Params["atMins"]),
-                        Query = Request.Params["queryFullPath"] + Request.Params["queryParams"],
-                        ManagerSettins = Settings,
-                    });
-                ActionResult = "Scheduled job is CREATED!";
-                break;
-            case "removeBackupJob":
-                ScheduledJobService.RemoveJob(Request.Params["jobName"]);
-                ActionResult = "Scheduled job is DELETED!";
-                break;
-            case "testLog":
-                LogService.WriteLog("Hello logs");
-                break;
-            case "logs":
-                Response.ClearContent();
-                Response.ContentType = "text/plain";
-                Response.Write(LogService.ReadLog());
-                Response.StatusCode = (int)HttpStatusCode.OK;
-                Response.End();
-                return;
-        }
-    }
-
-    internal string _currentUrlFullPath;
-    public string CurrentUrlFullPath
-    {
-        get
-        {
-            if (_currentUrlFullPath != null) return _currentUrlFullPath;
-            if (Request?.Url == null) return null;
-            return _currentUrlFullPath = $"{Request.Url.Scheme}://{Request.Url.Host}{Request.Url.AbsolutePath}";
+            Response.ClearContent();
+            Response.ContentType = "text/plain";
+            Response.Write(LogService.ReadLog());
+            Response.StatusCode = (int)HttpStatusCode.OK;
+            Response.End();
+            return;
         }
     }
 
     public ICloudBlob[] GetAzureBlobStorageBackups()
     {
-        try { return BlobStorageService.GetListOfBlobStorageItems().ToArray(); }
+        try { return BlobStorageService.GetListOfBlobStorageItems(Settings).ToArray(); }
         catch (StorageException) { return null; }
         catch (FormatException) { return null; }
     }

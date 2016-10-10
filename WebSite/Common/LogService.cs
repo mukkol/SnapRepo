@@ -7,17 +7,15 @@ namespace AzureBackupManager.Common
     public class LogService
     {
         private readonly string _localFolderPath;
-
-        public LogService(string localFolderPath)
+        public LogService()
         {
-            _localFolderPath = localFolderPath;
+            _localFolderPath = SettingsFactory.GetStaticLocalFolderPath();
         }
         public void WriteLog(string message)
         {
             StreamWriter file = new StreamWriter(GetFilename(), true, Encoding.UTF8);
             file.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}: {message}");
             file.Close();
-
         }
         public string ReadLog()
         {

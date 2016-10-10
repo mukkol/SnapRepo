@@ -1,16 +1,16 @@
-﻿using System.Web.Hosting;
+﻿using AzureBackupManager.Common.IoC;
 using FluentScheduler;
 
 namespace AzureBackupManager.Scheduling
 {
     public class BackupRegistry : Registry
     {
-        public BackupRegistry(string localFolderPath)
+        public BackupRegistry()
         {
-            var jobs = new ScheduledJobPersistor(localFolderPath).GetAll();
-            foreach (var j in jobs)
+            var jobs = ObjectFactory.Container.GetInstance<ScheduledJobPersistor>().GetAll();
+            foreach (var job in jobs)
             {
-                Schedule(new BackupTask(j.ManagerSettins, j.Name, j)).WithName(j.Name).ToRunEvery(j.Interval).Days().At(j.AtHours, j.AtMins);
+                Schedule(new BackupTask(job.ManagerSettins, job)).WithName(job.Name).ToRunEvery(job.Interval).Days().At(job.AtHours, job.AtMins);
             }
         }
     }
