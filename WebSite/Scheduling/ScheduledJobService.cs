@@ -7,12 +7,10 @@ namespace AzureBackupManager.Scheduling
     public class ScheduledJobService
     {
         private readonly ScheduledJobPersistor _scheduledJobPersistor;
-        private readonly BackupRegistry _backupRegistry;
 
-        public ScheduledJobService(ScheduledJobPersistor scheduledJobPersistor, BackupRegistry backupRegistry)
+        public ScheduledJobService(ScheduledJobPersistor scheduledJobPersistor)
         {
             _scheduledJobPersistor = scheduledJobPersistor;
-            _backupRegistry = backupRegistry;
         }
 
         public void AddJob(BackupJobSettings job)
@@ -57,7 +55,7 @@ namespace AzureBackupManager.Scheduling
             {
                 JobManager.RemoveJob(schedule.Name);
             }
-            JobManager.Initialize(_backupRegistry);
+            JobManager.Initialize(new BackupRegistry());
         }
 
     }

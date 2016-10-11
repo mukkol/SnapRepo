@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -21,19 +22,25 @@ namespace AzureBackupManager.Common
             _logService = ObjectFactory.Container.GetInstance<LogService>();
             _logService.WriteLog("Application started!", true);
 
-            MonitorHostUrl = GetCurrentSiteHostAddresses().FirstOrDefault();
-            _logService.WriteLog("MonitorHostUrl: " + MonitorHostUrl, true);
-
             JobManager.Initialize(ObjectFactory.Container.GetInstance<BackupRegistry>());
-            JobManager.JobException += (info) => _logService.WriteLog("An error just happened with a scheduled job: " + info.Exception, true);
+            JobManager.JobException += (info) => _logService.WriteLog("An error just happened with a scheduled job: " + info?.Exception, true);
+
+            if (SettingsFactory.PingIisOnApplicationEnd())
+            {
+                MonitorHostUrl = GetCurrentSiteHostAddresses().FirstOrDefault();
+                _logService.WriteLog("MonitorHostUrl: " + MonitorHostUrl, true);
+            }
         }
 
         public static void ApplicationEnd()
         {
             _logService.WriteLog("Application Stopped!", true);
-            var client = new WebClient();
-            client.DownloadString(MonitorHostUrl);
-            _logService.WriteLog("Application Shut Down Ping: " + MonitorHostUrl, true);
+            if(SettingsFactory.PingIisOnApplicationEnd())
+            {
+                var client = new WebClient();
+                client.DownloadString(MonitorHostUrl);
+                _logService.WriteLog("Application Shut Down Ping: " + MonitorHostUrl, true);
+            }
         }
 
         public void Init(HttpApplication application)

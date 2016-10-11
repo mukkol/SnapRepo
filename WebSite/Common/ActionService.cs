@@ -47,7 +47,7 @@ namespace AzureBackupManager.Common
                     actionResult = $"Backup Created ({backupFileName}) in Local Repository!";
                     break;
                 case "restoreLocal":
-                    _backupService.RestoreLocal(settings, requestParams["file"]);
+                    _backupService.RestoreLocal(settings, requestParams["file"], true, settings.IisSiteName);
                     actionResult = $"Backup ({requestParams["file"]}) restored!";
                     break;
                 case "backupAzure":

@@ -25,6 +25,7 @@ namespace AzureBackupManager.Common.IoC
                 x.For<LogService>().Use<LogService>().Singleton();
                 x.For<ScheduledJobService>().Use<ScheduledJobService>().Singleton();
                 x.For<ScheduledJobPersistor>().Use<ScheduledJobPersistor>().Singleton();
+                x.For<BackupRegistry>().Use<BackupRegistry>();
             });
 
         }

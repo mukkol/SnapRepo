@@ -12,6 +12,7 @@ namespace AzureBackupManager.Common
         public string DatabaseOwner { get; set; }
         public string DbConnectionString { get; set; }
         public string DatabaseServerName { get; set; }
+        public string IisSiteName { get; set; }
         public bool DbExists { get; set; }
 
         public override string ToString()

@@ -39,6 +39,8 @@ namespace AzureBackupManager.Common
                 DatabaseServerName = requestParams["databaseServerName"]
                                 ?? ConfigurationManager.AppSettings["BackupManager.DatabaseServerName"]
                                 ?? new SqlConnectionStringBuilder(connectionString).DataSource,
+                IisSiteName = requestParams["iisSiteName"]
+                                ?? ConfigurationManager.AppSettings["BackupManager.IisSiteName"],
                 DatabaseName = databaseName,
                 DbConnectionString = connectionString,
                 DbExists = DatabaseExists(databaseName, connectionString),
@@ -50,6 +52,11 @@ namespace AzureBackupManager.Common
         {
             return  ConfigurationManager.AppSettings["BackupManager.LocalFolderPath"]
                     ?? (new DirectoryInfo(HttpContext.Current.Server.MapPath("~")).Parent?.Parent?.FullName ?? "C:\\temp") + "\\BackupManagerRepository\\";
+        }
+
+        public static bool PingIisOnApplicationEnd()
+        {
+            return bool.Parse(ConfigurationManager.AppSettings["BackupManager.PingIisOnApplicationEnd"] ?? "False");
         }
 
 
