@@ -31,7 +31,7 @@ namespace AzureBackupManager.Common
         }
         public string GetFilename()
         {
-            return _localFolderPath + $"{DateTime.Now.ToString("yyyy-MM-dd")}_log.txt";
+            return _localFolderPath + $"{DateTime.Now.ToString("yyyy-MM")}_log.txt";
         }
     }
 }

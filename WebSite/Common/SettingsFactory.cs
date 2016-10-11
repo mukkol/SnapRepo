@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Configuration;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Web;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
@@ -54,23 +55,29 @@ namespace AzureBackupManager.Common
 
         public static bool DatabaseExists(string databaseName, string dbConnectionString)
         {
+            var connStrBuilder = new SqlConnectionStringBuilder(dbConnectionString);
+            connStrBuilder.ConnectTimeout = 3;
             try
             {
-                Server server = new Server(new ServerConnection(new SqlConnection(dbConnectionString)));
-                return server?.Databases.Contains(databaseName) ?? false;
+                Server server = new Server(new ServerConnection(new SqlConnection(connStrBuilder.ConnectionString)));
+                return server.Databases[databaseName] != null;
             }
             catch (ConnectionFailureException) { return false; }
+            catch (IndexOutOfRangeException) { return false; }
         }
 
         public static string GetDbOwner(string databaseName, string dbConnectionString)
         {
+            var connStrBuilder = new SqlConnectionStringBuilder(dbConnectionString);
+            connStrBuilder.ConnectTimeout = 3;
             try
             {
-                Server server = new Server(new ServerConnection(new SqlConnection(dbConnectionString)));
-                Database database = server?.Databases[databaseName];
+                Server server = new Server(new ServerConnection(new SqlConnection(connStrBuilder.ConnectionString)));
+                var database = server.Databases[databaseName];
                 return database?.Owner;
             }
             catch (ConnectionFailureException) { return null; }
+            catch (IndexOutOfRangeException) { return null; }
         }
 
         /// <summary>

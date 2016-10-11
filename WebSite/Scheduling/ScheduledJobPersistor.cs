@@ -32,6 +32,7 @@ namespace AzureBackupManager.Scheduling
                 return s ?? new BackupJobSettings[] {};
             }
             catch (FileNotFoundException) { return new BackupJobSettings[] { }; }
+            catch (DirectoryNotFoundException) { return new BackupJobSettings[] { }; }
         }
 
     }

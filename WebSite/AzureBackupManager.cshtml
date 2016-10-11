@@ -133,6 +133,11 @@
 
             </div>
         </div>
+ 
+        @if (!Settings.DbExists)
+        {
+            <div class="alert alert-danger">Could not connect to database. Check the connection string!</div>
+        }
 
         <div class="panel panel-default" id="panel1">
             <div class="panel-heading">
@@ -211,20 +216,15 @@
 
         @if (Request.Params["settings"] != null)
         {
-            if (!Settings.DbExists)
-            {
-                <div class="alert alert-danger">Could not connect to database. Check the connection string!</div>
-            }
-
-            <div class="panel panel-default" id="panel-cleanAzure">
+            <div class="panel panel-default" id="panel-backupAzure">
                 <div class="panel-heading">
                     <h2 class="panel-title">
-                        <a data-toggle="collapse" data-target="#collapse-cleanAzure" href="#panel-cleanAzure">
+                        <a data-toggle="collapse" data-target="#collapse-backupAzure" href="#panel-backupAzure">
                             Backup To Azure Repository <small>show/hide</small>
                         </a>
                     </h2>
                 </div>
-                <div id="collapse-cleanAzure" class="panel-body panel-collapse collapse">
+                <div id="collapse-backupAzure" class="panel-body panel-collapse collapse">
                     <form method="GET" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
                         <input type="hidden" name="settings" value="@SettingsSerialized" />
                         <input type="hidden" name="action" value="backupAzure" />
@@ -375,19 +375,19 @@
 
             <hr/>
 
-            <div class="panel panel-default" id="panel-backupAzure">
+            <div class="panel panel-default" id="panel-cleanAzure">
                 <div class="panel-heading">
                     <h2 class="panel-title">
-                        <a data-toggle="collapse" data-target="#collapse-backupAzure" href="#panel-backupAzure">
+                        <a data-toggle="collapse" data-target="#collapse-cleanAzure" href="#panel-cleanAzure">
                             Clean Old Backups From Azure <small>show/hide</small>
                         </a>
                     </h2>
                 </div>
-                <div id="collapse-backupAzure" class="panel-body panel-collapse collapse">
+                <div id="collapse-cleanAzure" class="panel-body panel-collapse collapse">
 
                     <form method="GET" role="form" action="@(Request.Url.AbsolutePath)" class="form-horizontal">
                         <input type="hidden" name="settings" value="@SettingsSerialized" />
-                        <input type="hidden" name="action" value="backupAzure" />
+                        <input type="hidden" name="action" value="cleanAzure" />
 
                         <div class="form-group">
                             <label class="col-sm-3 control-label" for="">Filter by backup name</label>
@@ -471,10 +471,11 @@
     }
 }
 
-@helper CreateTableFromList(IEnumerable<object> list, IEnumerable<string> exceptFields = null)
+@helper CreateTableFromList(IEnumerable<object> list)
 {
-    object firstItem = list.FirstOrDefault();
-    var firstItemProperties = firstItem?.GetType().GetProperties().Where(p => !exceptFields?.Contains(p.Name) ?? true) ?? new PropertyInfo[] { };
+    var array = list?.ToArray();
+    object firstItem = array?.FirstOrDefault();
+    var firstItemProperties = firstItem?.GetType().GetProperties() ?? new PropertyInfo[] { };
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
@@ -485,7 +486,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var d in list)
+            @foreach (var d in array)
             {
                 <tr>
                     @foreach (var prd in firstItemProperties)

@@ -141,7 +141,7 @@
     <Content Include="Global.asax" />
     <Content Include="packages.config" />
     <Content Include="Index.cshtml" />
-    <None Include="AzureBackupManager.cshtml" />
+    <Content Include="AzureBackupManager.cshtml" />
     <Content Include="connectionStrings.config">
       <SubType>Designer</SubType>
     </Content>

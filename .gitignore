@@ -5,3 +5,4 @@ WebSite/connectionStrings.config
 .vs/
 **/packages/*
 BackupManagerRepository/
+.pudxml
