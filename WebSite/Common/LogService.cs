@@ -11,11 +11,20 @@ namespace AzureBackupManager.Common
         {
             _localFolderPath = SettingsFactory.GetStaticLocalFolderPath();
         }
-        public void WriteLog(string message)
+        public void WriteLog(string message, bool hideException = false)
         {
-            StreamWriter file = new StreamWriter(GetFilename(), true, Encoding.UTF8);
-            file.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}: {message}");
-            file.Close();
+            try
+            {
+                StreamWriter file = new StreamWriter(GetFilename(), true, Encoding.UTF8);
+                file.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}: {message}");
+                file.Close();
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                if(hideException)
+                    return;
+                throw e;
+            }
         }
         public string ReadLog()
         {

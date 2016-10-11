@@ -309,8 +309,8 @@
                     t.Item1.Name,
                     t.Item1.Interval,
                     AtTime = $"{t.Item1.AtHours.ToString("d2")}:{t.Item1.AtMins.ToString("d2")}",
-                    t.Item2.NextRun,
-                    t.Item2.Disabled,
+                    t.Item2?.NextRun,
+                    t.Item2?.Disabled,
                     Query = t.Item1.Query,
                     Delete = "<a href=\"?action=removeBackupJob" +
                         $"&jobName={HttpUtility.UrlEncode(t.Item1.Name)}" +
@@ -473,7 +473,7 @@
 
 @helper CreateTableFromList(IEnumerable<object> list)
 {
-    var array = list?.ToArray();
+    var array = list?.ToArray() ?? new object[]{};
     object firstItem = array?.FirstOrDefault();
     var firstItemProperties = firstItem?.GetType().GetProperties() ?? new PropertyInfo[] { };
     <table class="table table-condensed table-hover">
