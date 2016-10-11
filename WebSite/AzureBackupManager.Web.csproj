@@ -145,9 +145,6 @@
     <Content Include="connectionStrings.config">
       <SubType>Designer</SubType>
     </Content>
-    <Content Include="connectionStrings.example.config">
-      <SubType>Designer</SubType>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Web.config">
