@@ -175,9 +175,9 @@
                         <label for="" class="col-sm-4">Site Name <small>(target web site for restore)</small></label>
                         <div class="col-sm-8">
                             <select name="iisSiteName" class="form-control">
-                                @foreach (var siteName in GetIisSiteNames())
+                                @foreach (var sitekvp in GetIisSiteNames())
                                 {
-                                    <option value="@siteName" @(Settings.IisSiteName == siteName ? "selected":"") >@siteName</option>
+                                    <option value="@sitekvp.Value" @(Settings.IisSiteName == sitekvp.Value ? "selected":"") >@sitekvp.Key</option>
                                 }
                             </select>
                         </div>
@@ -235,7 +235,7 @@
                 <div class="panel-heading">
                     <h2 class="panel-title">
                         <a data-toggle="collapse" data-target="#collapse-backupAzure" href="#panel-backupAzure">
-                            Backup To Azure Repository <small>show/hide</small>
+                            Create Backup To Azure Repository <small>show/hide</small>
                         </a>
                     </h2>
                 </div>
@@ -291,7 +291,7 @@
                 <div class="panel-heading">
                     <h2 class="panel-title">
                         <a data-toggle="collapse" data-target="#collapse-backupLocal" href="#panel-backupLocal">
-                            Backup DB And AppData Folder To Local Repository <small>show/hide</small>
+                            Create Backup To Local Repository <small>show/hide</small>
                         </a>
                     </h2>
                 </div>
@@ -374,7 +374,13 @@
                         <div class="form-group">
                             <label class="col-sm-3 control-label" for="">Query Parameters</label>
                             <div class="col-sm-9">
-                                <input type="text" name="queryParams" value="@(Request.Params["queryParams"] ?? "?action=backupAzure&backupInfix=daily-backup")" class="form-control" />
+                                <input type="text" name="queryParams" value="@(Request.Params["queryParams"] ?? "?action=backupAzure&backupInfix=daily-backup")" class="form-control"/>
+                                <small>
+                                    <b>other examples:</b><br/>
+                                    Cleaning Daily Azure Backups Job: <b>?action=cleanAzure&filterInfix=_daily-backup_&minDays=7</b><br/>
+                                    Weekly Azure Backup Job: <b>?action=backupAzure&backupInfix=weekly-backup</b><br/>
+                                    Cleaning Weekly Azure Backups Job: <b>?action=cleanAzure&filterInfix=_weekly-backup_&minDays=30</b><br/>
+                                </small>
                             </div>
                         </div>
                         <div class="form-group">
@@ -457,7 +463,8 @@
 
     public void OnLoad()
     {
-        Settings = (string.IsNullOrEmpty(Request.Params["settings"]) || Request.Params["action"] != "setSettings")
+        bool getActionsFromParamsOrDefault = (string.IsNullOrEmpty(Request.Params["settings"]) || Request.Params["action"] == "setSettings");
+        Settings = getActionsFromParamsOrDefault
                 ? SettingsFactory.CreateSettingsFromParamsOrDefault(Request.Params)
                 : Json.Decode<ManagerSettings>(Request.Params["settings"]);
 
@@ -485,11 +492,15 @@
         catch (FormatException) { return null; }
     }
 
-    public string[] GetIisSiteNames()
+    public IList<KeyValuePair<string,string>> GetIisSiteNames()
     {
         using (Microsoft.Web.Administration.ServerManager serverManager = new Microsoft.Web.Administration.ServerManager())
         {
-            return serverManager.Sites?.Select(s => s.Name).OrderBy(s => s).ToArray() ?? new string[] {};
+            var sites = serverManager.Sites?.Select(s => new KeyValuePair<string,string>(s.Name,s.Name))
+                                            .OrderBy(s => s.Key)
+                                            .ToList() ?? new List<KeyValuePair<string,string>>(){};
+            sites.Insert(0, new KeyValuePair<string,string>("-----", ""));
+            return sites;
         }
     }
 }

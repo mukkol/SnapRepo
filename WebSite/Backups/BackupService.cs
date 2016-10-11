@@ -47,9 +47,11 @@ namespace AzureBackupManager.Backups
             var files = Directory.GetFiles(backupFolderPath).Select(s => s?.Replace(settings.LocalFolderPath, "")).ToList();
             string databaseFile = files.FirstOrDefault(f => f.EndsWith(".bak"));
             string appDataZipFile = files.FirstOrDefault(f => f.EndsWith(".zip"));
-            RestoreDb(settings, settings.DatabaseName, databaseFile);
+            string restoreInfo = RestoreDb(settings, settings.DatabaseName, databaseFile);
+            _logService.WriteLog(restoreInfo);
             RestoreAppData(settings.LocalFolderPath, appDataZipFile, settings.AppDataFolder);
             SetDbOwner(settings, settings.DatabaseName);
+            _logService.WriteLog($"Set DB ({settings.DatabaseName}) Owner ({settings.DatabaseOwner})");
             Directory.Delete(backupFolderPath, true);
 
             if (iisreset && !string.IsNullOrEmpty(siteName))
@@ -57,39 +59,15 @@ namespace AzureBackupManager.Backups
                 _logService.WriteLog($"Trying to recycle IIS site ({siteName}).");
                 using (ServerManager iisManager = new ServerManager())
                 {
-                    foreach (Site site in iisManager.Sites)
+                    var site = iisManager.Sites.FirstOrDefault(s => s.Name == siteName);
+                    if (site != null)
                     {
-                        if (site.Name == siteName)
-                        {
-                            var appPool = iisManager.ApplicationPools[site.Applications["/"]?.ApplicationPoolName];
-                            _logService.WriteLog($"Recycling Application Pool ({appPool?.Name}).");
-                            appPool?.Recycle();
-                            break;
-                        }
+                        var appPool = iisManager.ApplicationPools[site.Applications["/"].ApplicationPoolName];
+                        _logService.WriteLog($"Recycling Application Pool ({appPool.Name}).");
+                        appPool.Recycle();
                     }
                 }
             }
-        }
-
-        public string BackupDb(ManagerSettings settings, string dbName, out string infoMessage)
-        {
-            var backupFileName = $"{dbName}_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{Environment.MachineName}_db.bak";
-            string info = "";
-            using (var connection = new SqlConnection(settings.DbConnectionString))
-            {
-                connection.InfoMessage += (sender, args) => info += args.Message + Environment.NewLine;
-                //TODO: SqlServer.SMO would be better tool for this
-                var query = $"BACKUP DATABASE {dbName} TO DISK='{settings.LocalFolderPath}{backupFileName}' WITH COPY_ONLY";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                    connection.Close();
-                }
-            }
-            infoMessage = info;
-            return backupFileName;
         }
 
         public static string ZipAppDataFolder(string localFolderPath, string appDataFolder)
@@ -120,11 +98,15 @@ namespace AzureBackupManager.Backups
         public static string ExtractPackage(string localFolderPath, string packageFileName)
         {
             string backupFilePath = localFolderPath + packageFileName;
+            string backupFolderPath = backupFilePath.Replace(".zip", "");
+            if (Directory.Exists(backupFolderPath))
+            {
+                Directory.Delete(backupFolderPath, true);
+            }
             using (ZipFile zip = new ZipFile(backupFilePath))
             {
                 zip.ExtractAll(localFolderPath);
             }
-            string backupFolderPath = backupFilePath.Replace(".zip", "");
             return backupFolderPath;
         }
 
@@ -135,7 +117,7 @@ namespace AzureBackupManager.Backups
             if (createBackup && exists)
                 Directory.Move(appDataFolder, appDataFolder + "_backup_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
             else
-                Directory.Delete(appDataFolder);
+                Directory.Delete(appDataFolder, true);
             Directory.CreateDirectory(appDataFolder);
             using (ZipFile zip = new ZipFile(appDataZipFilePath))
             {
@@ -144,12 +126,37 @@ namespace AzureBackupManager.Backups
             return appDataFolder;
         }
 
+        public string BackupDb(ManagerSettings settings, string dbName, out string infoMessage)
+        {
+            var backupFileName = $"{dbName}_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{Environment.MachineName}_db.bak";
+            string info = "";
+            var scsb = new SqlConnectionStringBuilder(settings.DbConnectionString);
+            scsb.InitialCatalog = "master";
+            using (var connection = new SqlConnection(scsb.ConnectionString))
+            {
+                connection.InfoMessage += (sender, args) => info += args.Message + Environment.NewLine;
+                //TODO: SqlServer.SMO would be better tool for this
+                var query = $"BACKUP DATABASE {dbName} TO DISK='{settings.LocalFolderPath}{backupFileName}' WITH COPY_ONLY";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                    connection.Close();
+                }
+            }
+            infoMessage = info;
+            return backupFileName;
+        }
+
         public string RestoreDb(ManagerSettings settings, string dbName, string backupFileName)
         {
             //TODO: for new database needs to relocate the files (.mdf and .lgf files)
             string backupFilePath = settings.LocalFolderPath + backupFileName;
             string infoMessage = "";
-            using (var connection = new SqlConnection(settings.DbConnectionString))
+            var scsb = new SqlConnectionStringBuilder(settings.DbConnectionString);
+            scsb.InitialCatalog = "master";
+            using (var connection = new SqlConnection(scsb.ConnectionString))
             {
                 connection.InfoMessage += (sender, args) => infoMessage += args.Message + Environment.NewLine;
                 connection.Open();
