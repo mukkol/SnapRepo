@@ -74,7 +74,7 @@
                 <h4>There are two different ways to run it</h4>
                 <ol>
                     <li><b>Inside of target web site</b> which you are targeting the backups. It can be Episerver web site or any other type. <i>(Easier to maintain)</i></li>
-                    <li><b>Parallel web site</b> which will access the project's resources. <i>(More secure way)</i></li>
+                    <li><b>Parallel web site <i>(recommended)</i></b> which will access the project's resources. <i>(More secure way)</i></li>
                 </ol>
                 <h4>Transferring the data</h4>
                 <p>For transferring the data from environment to another, it's required that this tool is installed in all the environments. Only the Azure Blob storage remain the same in all environments.</p>
@@ -84,13 +84,17 @@
                     <li>IIS application pool user needs to have write and delete access to App Data -folder</li>
                     <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
                 </ul>
-                <h4>Dependens on 5 NuGet Packages</h4>
+                <h4>Dependens on 4 NuGet Packages and SQL Server SMO DLL:s (5 items)</h4>
                 <ol>
                     <li><b>WindowsAzure.Storage</b> version="7.2.1"</li>
                     <li><b>DotNetZip</b> version="1.9.1.8"</li>
-                    <li><b>Microsoft.SqlServer.ConnectionInfo.dll</b> version="1.0.1"</li>
-                    <li><b>Microsoft.SqlServer.Management.Sdk.Sfc.dll</b> version="1.0.1"</li>
-                    <li><b>Microsoft.SqlServer.Smo.dll</b> version="1.0.1"</li>
+                    <li><b>FluentScheduler</b> version="5.0.0"</li>
+                    <li><b>Microsoft.Web.Administration</b> version="7.0.0.0"</li>
+                    <li><b>Microsoft.SqlServer.ConnectionInfo</b> version=13.0.0.0</li>
+                    <li><b>Microsoft.SqlServer.Management.Sdk.Sfc</b> version=13.0.0.0</li>
+                    <li><b>Microsoft.SqlServer.Smo</b> version=13.0.0.0</li>
+                    <li><b>Microsoft.SqlServer.SqlClrProvider</b> version=13.0.0.0</li>
+                    <li><b>Microsoft.SqlServer.SqlEnum</b> version=13.0.0.0</li>
                 </ol>
                 <h3>Installation</h3>
                 <p>Installation depends on how you are planning to run this.</p>
@@ -122,6 +126,7 @@
                     </li>
                     <li>Make sure your IIS application user has access to required resources (folders) and SQL Server user (in connection string) has necessary privileges.</li>
                     <li>Backup manager needs to have long timeouts for requests and db connections. This site has 60min (3600secs) timeouts and SQL Connection timeout is set to 30 minutes (1800secs).</li>
+                    <li>Scheduled services required that the IIS site needs to be alive all the time. <a href="https://weblog.west-wind.com/posts/2013/oct/02/use-iis-application-initialization-for-keeping-aspnet-apps-alive" target="_blank">Here you can find further information.</a></li>
                     <li>Start using it!</li>
                 </ol>
                 <p></p>
