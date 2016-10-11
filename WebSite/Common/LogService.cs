@@ -6,10 +6,10 @@ namespace AzureBackupManager.Common
 {
     public class LogService
     {
-        private readonly string _localFolderPath;
+        private readonly string _localRepositoryPath;
         public LogService()
         {
-            _localFolderPath = SettingsFactory.GetStaticLocalFolderPath();
+            _localRepositoryPath = SettingsFactory.GetStaticLocalRepositoryPath();
         }
         public void WriteLog(string message, bool hideException = false)
         {
@@ -40,7 +40,7 @@ namespace AzureBackupManager.Common
         }
         public string GetFilename()
         {
-            return _localFolderPath + $"{DateTime.Now.ToString("yyyy-MM")}_log.txt";
+            return _localRepositoryPath + $"{DateTime.Now.ToString("yyyy-MM")}_log.txt";
         }
     }
 }

@@ -24,7 +24,7 @@ namespace AzureBackupManager.Common
                                ?? new SqlConnectionStringBuilder(connectionString).InitialCatalog;
             return new ManagerSettings()
             {
-                LocalFolderPath = GetStaticLocalFolderPath(),
+                LocalRepositoryPath = GetStaticLocalRepositoryPath(),
                 AppDataFolder = requestParams["appDataFolder"]
                                 ?? ConfigurationManager.AppSettings["BackupManager.AppDataFolder"]
                                 ?? TryGetEpiserverAppDataPath()
@@ -48,9 +48,9 @@ namespace AzureBackupManager.Common
         }
 
 
-        public static string GetStaticLocalFolderPath()
+        public static string GetStaticLocalRepositoryPath()
         {
-            return  ConfigurationManager.AppSettings["BackupManager.LocalFolderPath"]
+            return  ConfigurationManager.AppSettings["BackupManager.LocalRepositoryPath"]
                     ?? (new DirectoryInfo(HttpContext.Current.Server.MapPath("~")).Parent?.Parent?.FullName ?? "C:\\temp") + "\\BackupManagerRepository\\";
         }
 

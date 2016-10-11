@@ -149,7 +149,7 @@
                 <form method="GET" role="form" action="@(Request.Url.AbsolutePath)">
                     <div class="form-group form-group-sm row">
                         <label for="" class="col-sm-4">Local Repository Path <small>(IIS application pool user needs to have write and delete access to this folder)</small></label>
-                        <div class="col-sm-8"><input type="text" name="localFolderPath" value="@Settings.LocalFolderPath" class="form-control" disabled="disabled" /></div>
+                        <div class="col-sm-8"><input type="text" name="localRepositoryPath" value="@Settings.LocalRepositoryPath" class="form-control" disabled="disabled" /></div>
                     </div>
                     <div class="form-group form-group-sm row">
                         <label for="" class="col-sm-4">AppData Folder Path <small>(Path to the folder you want to backup/restore)</small></label>
@@ -262,7 +262,7 @@
 
             <h2>Local Backup Repository</h2>
 
-            var localBackups = new DirectoryInfo(Settings.LocalFolderPath).GetFiles("*_package.zip").OrderByDescending(f => f.Name)
+            var localBackups = new DirectoryInfo(Settings.LocalRepositoryPath).GetFiles("*_package.zip").OrderByDescending(f => f.Name)
                 .Select(b => new
                 {
                     b.Name,

@@ -7,16 +7,16 @@ namespace AzureBackupManager.Scheduling
 {
     public class ScheduledJobPersistor
     {
-        private readonly string _localFolderPath;
+        private readonly string _localRepositoryPath;
         
         public ScheduledJobPersistor()
         {
-            _localFolderPath = SettingsFactory.GetStaticLocalFolderPath();
+            _localRepositoryPath = SettingsFactory.GetStaticLocalRepositoryPath();
         }
 
         public void Store(BackupJobSettings[] backupJobs)
         {
-            StreamWriter file = new StreamWriter(_localFolderPath + "ScheduledJobsRepository.json", false, Encoding.UTF8);
+            StreamWriter file = new StreamWriter(_localRepositoryPath + "ScheduledJobsRepository.json", false, Encoding.UTF8);
             file.WriteLine(Json.Encode(backupJobs));
             file.Close();
         }
@@ -25,7 +25,7 @@ namespace AzureBackupManager.Scheduling
         {
             try
             {
-                StreamReader file = new StreamReader(_localFolderPath + "ScheduledJobsRepository.json", Encoding.UTF8);
+                StreamReader file = new StreamReader(_localRepositoryPath + "ScheduledJobsRepository.json", Encoding.UTF8);
                 var str = file.ReadToEnd();
                 var s = Json.Decode<BackupJobSettings[]>(str);
                 file.Close();

@@ -26,10 +26,10 @@ namespace AzureBackupManager.Backups
         {
             string infoMessage;
             string dbBackupFileName = BackupDb(settings, settings.DatabaseName, out infoMessage);
-            string zipFileName = ZipAppDataFolder(settings.LocalFolderPath, settings.AppDataFolder);
-            string backupFileName = CreateBackupPackage(settings.LocalFolderPath, dbBackupFileName, zipFileName, backupInfix);
-            File.Delete(settings.LocalFolderPath + dbBackupFileName);
-            File.Delete(settings.LocalFolderPath + zipFileName);
+            string zipFileName = ZipAppDataFolder(settings.LocalRepositoryPath, settings.AppDataFolder);
+            string backupFileName = CreateBackupPackage(settings.LocalRepositoryPath, dbBackupFileName, zipFileName, backupInfix);
+            File.Delete(settings.LocalRepositoryPath + dbBackupFileName);
+            File.Delete(settings.LocalRepositoryPath + zipFileName);
             return backupFileName;
         }
 
@@ -37,19 +37,19 @@ namespace AzureBackupManager.Backups
         {
             var backupFileName = BackupLocal(settings, backupInfix);
             var uri = _blobStorageService.SendBackupPackage(settings, backupFileName);
-            File.Delete(settings.LocalFolderPath + backupFileName);
+            File.Delete(settings.LocalRepositoryPath + backupFileName);
             return uri;
         }
 
         public void RestoreLocal(ManagerSettings settings, string packateZipFile, bool iisreset = true, string siteName = null)
         {
-            string backupFolderPath = ExtractPackage(settings.LocalFolderPath, packateZipFile);
-            var files = Directory.GetFiles(backupFolderPath).Select(s => s?.Replace(settings.LocalFolderPath, "")).ToList();
+            string backupFolderPath = ExtractPackage(settings.LocalRepositoryPath, packateZipFile);
+            var files = Directory.GetFiles(backupFolderPath).Select(s => s?.Replace(settings.LocalRepositoryPath, "")).ToList();
             string databaseFile = files.FirstOrDefault(f => f.EndsWith(".bak"));
             string appDataZipFile = files.FirstOrDefault(f => f.EndsWith(".zip"));
             string restoreInfo = RestoreDb(settings, settings.DatabaseName, databaseFile);
             _logService.WriteLog(restoreInfo);
-            RestoreAppData(settings.LocalFolderPath, appDataZipFile, settings.AppDataFolder);
+            RestoreAppData(settings.LocalRepositoryPath, appDataZipFile, settings.AppDataFolder);
             SetDbOwner(settings, settings.DatabaseName);
             _logService.WriteLog($"Set DB ({settings.DatabaseName}) Owner ({settings.DatabaseOwner})");
             Directory.Delete(backupFolderPath, true);
@@ -70,34 +70,34 @@ namespace AzureBackupManager.Backups
             }
         }
 
-        public static string ZipAppDataFolder(string localFolderPath, string appDataFolder)
+        public static string ZipAppDataFolder(string localRepositoryPath, string appDataFolder)
         {
             string fileName = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{Environment.MachineName}_AppData.zip";
             using (ZipFile zip = new ZipFile())
             {
                 zip.AddDirectory(appDataFolder);
-                zip.Save(localFolderPath + fileName);
+                zip.Save(localRepositoryPath + fileName);
             }
             return fileName;
         }
 
-        public static string CreateBackupPackage(string localFolderPath, string dbBackupFileName, string appDataZipFileName, string backupInfix)
+        public static string CreateBackupPackage(string localRepositoryPath, string dbBackupFileName, string appDataZipFileName, string backupInfix)
         {
             var infix = string.IsNullOrEmpty(backupInfix) ? "_" : "_" + backupInfix.Replace(" ", "") + "_";
             string zipFileNamePrefix = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}{infix}{Environment.MachineName}_package";
             string zipFileName = $"{zipFileNamePrefix}.zip";
             using (ZipFile zip = new ZipFile())
             {
-                zip.AddFile($"{localFolderPath}{dbBackupFileName}", zipFileNamePrefix);
-                zip.AddFile($"{localFolderPath}{appDataZipFileName}", zipFileNamePrefix);
-                zip.Save(localFolderPath + zipFileName);
+                zip.AddFile($"{localRepositoryPath}{dbBackupFileName}", zipFileNamePrefix);
+                zip.AddFile($"{localRepositoryPath}{appDataZipFileName}", zipFileNamePrefix);
+                zip.Save(localRepositoryPath + zipFileName);
             }
             return zipFileName;
         }
 
-        public static string ExtractPackage(string localFolderPath, string packageFileName)
+        public static string ExtractPackage(string localRepositoryPath, string packageFileName)
         {
-            string backupFilePath = localFolderPath + packageFileName;
+            string backupFilePath = localRepositoryPath + packageFileName;
             string backupFolderPath = backupFilePath.Replace(".zip", "");
             if (Directory.Exists(backupFolderPath))
             {
@@ -105,14 +105,14 @@ namespace AzureBackupManager.Backups
             }
             using (ZipFile zip = new ZipFile(backupFilePath))
             {
-                zip.ExtractAll(localFolderPath);
+                zip.ExtractAll(localRepositoryPath);
             }
             return backupFolderPath;
         }
 
-        public static string RestoreAppData(string localFolderPath, string appDataZipFile, string appDataFolder, bool createBackup = false)
+        public static string RestoreAppData(string localRepositoryPath, string appDataZipFile, string appDataFolder, bool createBackup = false)
         {
-            string appDataZipFilePath = localFolderPath + appDataZipFile;
+            string appDataZipFilePath = localRepositoryPath + appDataZipFile;
             bool exists = Directory.Exists(appDataFolder);
             if (createBackup && exists)
                 Directory.Move(appDataFolder, appDataFolder + "_backup_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
@@ -136,7 +136,7 @@ namespace AzureBackupManager.Backups
             {
                 connection.InfoMessage += (sender, args) => info += args.Message + Environment.NewLine;
                 //TODO: SqlServer.SMO would be better tool for this
-                var query = $"BACKUP DATABASE {dbName} TO DISK='{settings.LocalFolderPath}{backupFileName}' WITH COPY_ONLY";
+                var query = $"BACKUP DATABASE {dbName} TO DISK='{settings.LocalRepositoryPath}{backupFileName}' WITH COPY_ONLY";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -152,7 +152,7 @@ namespace AzureBackupManager.Backups
         public string RestoreDb(ManagerSettings settings, string dbName, string backupFileName)
         {
             //TODO: for new database needs to relocate the files (.mdf and .lgf files)
-            string backupFilePath = settings.LocalFolderPath + backupFileName;
+            string backupFilePath = settings.LocalRepositoryPath + backupFileName;
             string infoMessage = "";
             var scsb = new SqlConnectionStringBuilder(settings.DbConnectionString);
             scsb.InitialCatalog = "master";

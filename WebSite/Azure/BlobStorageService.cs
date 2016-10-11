@@ -20,7 +20,7 @@ namespace AzureBackupManager.Azure
             CloudBlobContainer container = blobClient.GetContainerReference(settings.ContainerName);
             container.CreateIfNotExists();
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(backupFileName);
-            using (var fileStream = File.OpenRead($"{settings.LocalFolderPath}{backupFileName}"))
+            using (var fileStream = File.OpenRead($"{settings.LocalRepositoryPath}{backupFileName}"))
             {
                 blockBlob.UploadFromStream(fileStream);
             }
@@ -29,7 +29,7 @@ namespace AzureBackupManager.Azure
 
         public string DownloadPackage(ManagerSettings settings, string fileName)
         {
-            string downloadPath = settings.LocalFolderPath + fileName.Replace("/", "");
+            string downloadPath = settings.LocalRepositoryPath + fileName.Replace("/", "");
             CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[SettingsFactory.AzureBlobStorageConnectionStringName].ConnectionString);
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(settings.ContainerName);

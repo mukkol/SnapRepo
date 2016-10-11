@@ -27,7 +27,7 @@ namespace AzureBackupManager.Common
             {
                 case "setSettings":
                     //Creates the directory if it does not exist or throws an error if IIS user does not have privileges.
-                    Directory.CreateDirectory(settings.LocalFolderPath);
+                    Directory.CreateDirectory(settings.LocalRepositoryPath);
                     break;
                 case "download":
                     _blobStorageService.DownloadPackage(settings, requestParams["file"]);
@@ -38,7 +38,7 @@ namespace AzureBackupManager.Common
                     actionResult = $"File ({requestParams["file"]}) has been uploaded into Azure Repository! Backup URI: {backupUri}.";
                     break;
                 case "deleteLocal":
-                    string fileFullPath = settings.LocalFolderPath + requestParams["file"];
+                    string fileFullPath = settings.LocalRepositoryPath + requestParams["file"];
                     File.Delete(fileFullPath);
                     actionResult = $"File ({fileFullPath}) is deleted!";
                     break;

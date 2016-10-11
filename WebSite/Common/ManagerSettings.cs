@@ -4,7 +4,7 @@ namespace AzureBackupManager.Common
 {
     public class ManagerSettings
     {
-        public string LocalFolderPath { get; set; }
+        public string LocalRepositoryPath { get; set; }
         public string DatabaseName { get; set; }
         public string AppDataFolder { get; set; }
         public string DatabaseUser { get; set; }
