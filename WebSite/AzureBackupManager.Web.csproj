@@ -158,6 +158,7 @@
     <Compile Include="Azure\BlobStorageService.cs" />
     <Compile Include="Backups\BackupService.cs" />
     <Compile Include="Common\ActionService.cs" />
+    <Compile Include="Common\InitializationModule.cs" />
     <Compile Include="Common\IoC\ObjectFactory.cs" />
     <Compile Include="Common\IoC\StructureMapDependencyResolver.cs" />
     <Compile Include="Common\SettingsFactory.cs" />

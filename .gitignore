@@ -6,3 +6,6 @@ WebSite/connectionStrings.config
 **/packages/*
 BackupManagerRepository/
 **/PublishProfiles/*
+*/appSettings.config
+WebSite/appSettings.config
+WebSite/Web.*.config
