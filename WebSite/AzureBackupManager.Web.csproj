@@ -101,17 +101,25 @@
       <HintPath>..\packages\DotNetZip.1.9.1.8\lib\net20\Ionic.Zip.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.SqlServer.ConnectionInfo, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SqlServer.ConnectionInfo.dll.1.0.1\lib\Microsoft.SqlServer.ConnectionInfo.dll</HintPath>
+    <Reference Include="Microsoft.SqlServer.ConnectionInfo, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\Microsoft.SqlServer\Microsoft.SqlServer.ConnectionInfo\13.0.0.0__89845dcd8080cc91\Microsoft.SqlServer.ConnectionInfo.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.SqlServer.Management.Sdk.Sfc, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SqlServer.Management.Sdk.Sfc.dll.1.0.1\lib\Microsoft.SqlServer.Management.Sdk.Sfc.dll</HintPath>
+    <Reference Include="Microsoft.SqlServer.Management.Sdk.Sfc, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\Microsoft.SqlServer\Microsoft.SqlServer.Management.Sdk.Sfc\13.0.0.0__89845dcd8080cc91\Microsoft.SqlServer.Management.Sdk.Sfc.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.SqlServer.Smo, Version=10.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.SqlServer.Smo.dll.1.0.1\lib\Microsoft.SqlServer.Smo.dll</HintPath>
+    <Reference Include="Microsoft.SqlServer.Smo, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\Microsoft.SqlServer\Microsoft.SqlServer.Smo\13.0.0.0__89845dcd8080cc91\Microsoft.SqlServer.Smo.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.SqlClrProvider, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Microsoft.SqlServer\Microsoft.SqlServer.SqlClrProvider\13.0.0.0__89845dcd8080cc91\Microsoft.SqlServer.SqlClrProvider.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.SqlEnum, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Microsoft.SqlServer\Microsoft.SqlServer.SqlEnum\13.0.0.0__89845dcd8080cc91\Microsoft.SqlServer.SqlEnum.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Web.Administration, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Web.Administration.7.0.0.0\lib\net20\Microsoft.Web.Administration.dll</HintPath>
