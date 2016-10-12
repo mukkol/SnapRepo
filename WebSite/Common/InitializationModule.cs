@@ -25,7 +25,7 @@ namespace AzureBackupManager.Common
             JobManager.Initialize(ObjectFactory.Container.GetInstance<BackupRegistry>());
             JobManager.JobException += (info) => _logService.WriteLog("An error just happened with a scheduled job: " + info?.Exception, true);
 
-            if (SettingsFactory.PingIisOnApplicationEnd())
+            if (SettingsFactory.PingIisOnApplicationEnd)
             {
                 MonitorHostUrl = GetCurrentSiteHostAddresses().FirstOrDefault();
                 _logService.WriteLog("MonitorHostUrl: " + MonitorHostUrl, true);
@@ -35,7 +35,7 @@ namespace AzureBackupManager.Common
         public static void ApplicationEnd()
         {
             _logService.WriteLog("Application Stopped!", true);
-            if(SettingsFactory.PingIisOnApplicationEnd())
+            if(SettingsFactory.PingIisOnApplicationEnd)
             {
                 var client = new WebClient();
                 client.DownloadString(MonitorHostUrl);

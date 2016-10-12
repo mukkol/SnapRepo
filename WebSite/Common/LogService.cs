@@ -9,7 +9,7 @@ namespace AzureBackupManager.Common
         private readonly string _localRepositoryPath;
         public LogService()
         {
-            _localRepositoryPath = SettingsFactory.GetStaticLocalRepositoryPath();
+            _localRepositoryPath = SettingsFactory.StaticLocalRepositoryPath;
         }
         public void WriteLog(string message, bool hideException = false)
         {

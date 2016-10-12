@@ -11,11 +11,9 @@ namespace AzureBackupManager.Azure
 {
     public class BlobStorageService
     {
-
         public string SendBackupPackage(ManagerSettings settings, string backupFileName)
         {
-
-            CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[SettingsFactory.AzureBlobStorageConnectionStringName].ConnectionString);
+            CloudStorageAccount account = GetCloudStorageAccount(settings);
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(settings.ContainerName);
             container.CreateIfNotExists();
@@ -27,10 +25,11 @@ namespace AzureBackupManager.Azure
             return blockBlob.Uri.ToString();
         }
 
+
         public string DownloadPackage(ManagerSettings settings, string fileName)
         {
             string downloadPath = settings.LocalRepositoryPath + fileName.Replace("/", "");
-            CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[SettingsFactory.AzureBlobStorageConnectionStringName].ConnectionString);
+            CloudStorageAccount account = GetCloudStorageAccount(settings);
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(settings.ContainerName);
             CloudBlob blob = container.GetBlobReference(fileName);
@@ -58,12 +57,30 @@ namespace AzureBackupManager.Azure
 
         public IEnumerable<ICloudBlob> GetListOfBlobStorageItems(ManagerSettings settings, bool recursive = true)
         {
-            CloudStorageAccount account = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[SettingsFactory.AzureBlobStorageConnectionStringName].ConnectionString);
+            CloudStorageAccount account = GetCloudStorageAccount(settings);
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(settings.ContainerName);
             container.CreateIfNotExists();
-            var blobQuery = container.ListBlobs(null, recursive).OfType<ICloudBlob>() ?? Enumerable.Empty<ICloudBlob>();
-            return blobQuery;
+            var blobQuery = container.ListBlobs(null, recursive).OfType<ICloudBlob>().OrderByDescending(b => b.Properties.LastModified);
+            return blobQuery ?? Enumerable.Empty<ICloudBlob>();
         }
+
+        public static string GetBlobStorageUri(string blobStorageConnectionString)
+        {
+            CloudStorageAccount account = GetCloudStorageAccount(blobStorageConnectionString);
+            return account?.BlobStorageUri?.PrimaryUri.ToString();
+        }
+
+        public static CloudStorageAccount GetCloudStorageAccount(ManagerSettings settings)
+        {
+            return GetCloudStorageAccount(settings.BlobStorageConnectionString);
+        }
+        public static CloudStorageAccount GetCloudStorageAccount(string blobStorageConnectionString)
+        {
+            return CloudStorageAccount.Parse(blobStorageConnectionString);
+        }
+
+        public static string BlobStorageConnectionString => ConfigurationManager.ConnectionStrings[SettingsFactory.AzureBlobStorageConnectionStringName]?.ConnectionString;
+
     }
 }

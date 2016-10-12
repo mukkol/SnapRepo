@@ -3,8 +3,8 @@ using System.Collections.Specialized;
 using System.Configuration;
 using System.Data.SqlClient;
 using System.IO;
-using System.Linq;
 using System.Web;
+using AzureBackupManager.Azure;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 
@@ -18,13 +18,14 @@ namespace AzureBackupManager.Common
         public static ManagerSettings CreateSettingsFromParamsOrDefault(NameValueCollection requestParams = null)
         {
             if (requestParams == null) requestParams = new NameValueCollection();
-            var connectionString = ConfigurationManager.ConnectionStrings[BackupManagerConnectionStringName]?.ConnectionString;
+            var dBConnectionString = ConfigurationManager.ConnectionStrings[BackupManagerConnectionStringName]?.ConnectionString;
+            var blobStorageConnectionString = BlobStorageService.BlobStorageConnectionString;
             var databaseName = requestParams["databaseName"]
                                ?? ConfigurationManager.AppSettings["BackupManager.DatabaseName"]
-                               ?? new SqlConnectionStringBuilder(connectionString).InitialCatalog;
+                               ?? new SqlConnectionStringBuilder(dBConnectionString).InitialCatalog;
             return new ManagerSettings()
             {
-                LocalRepositoryPath = GetStaticLocalRepositoryPath(),
+                LocalRepositoryPath = StaticLocalRepositoryPath,
                 AppDataFolder = requestParams["appDataFolder"]
                                 ?? ConfigurationManager.AppSettings["BackupManager.AppDataFolder"]
                                 ?? TryGetEpiserverAppDataPath()
@@ -34,34 +35,36 @@ namespace AzureBackupManager.Common
                                 ?? "backup-manager-repository",
                 DatabaseOwner = requestParams["databaseOwner"]
                                 ?? ConfigurationManager.AppSettings["BackupManager.DatabaseOwner"]
-                                ?? GetDbOwner(databaseName, connectionString)
+                                ?? GetDbOwner(databaseName, dBConnectionString)
                                 ?? "DbOwner",
                 DatabaseServerName = requestParams["databaseServerName"]
                                 ?? ConfigurationManager.AppSettings["BackupManager.DatabaseServerName"]
-                                ?? new SqlConnectionStringBuilder(connectionString).DataSource,
+                                ?? new SqlConnectionStringBuilder(dBConnectionString).DataSource,
                 IisSiteName = requestParams["iisSiteName"]
                                 ?? ConfigurationManager.AppSettings["BackupManager.IisSiteName"],
+                DbSharedBackupFolder = requestParams["dbSharedBackupFolder"]
+                                ?? ConfigurationManager.AppSettings["BackupManager.DbSharedBackupFolder"],
                 DatabaseName = databaseName,
-                DbConnectionString = connectionString,
-                DbExists = DatabaseExists(databaseName, connectionString),
+                DbConnectionString = dBConnectionString,
+                BlobStorageConnectionString = blobStorageConnectionString,
+                AzureRepositoryUrl = BlobStorageService.GetBlobStorageUri(blobStorageConnectionString),
             };
         }
 
 
-        public static string GetStaticLocalRepositoryPath()
-        {
-            return  ConfigurationManager.AppSettings["BackupManager.LocalRepositoryPath"]
-                    ?? (new DirectoryInfo(HttpContext.Current.Server.MapPath("~")).Parent?.Parent?.FullName ?? "C:\\temp") + "\\BackupManagerRepository\\";
-        }
+        public static string StaticLocalRepositoryPath =>  ConfigurationManager.AppSettings["BackupManager.LocalRepositoryPath"]
+                                                        ?? (new DirectoryInfo(HttpContext.Current.Server.MapPath("~")).Parent?.Parent?.FullName 
+                                                        ?? "C:\\temp") + "\\BackupManagerRepository\\";
 
-        public static bool PingIisOnApplicationEnd()
-        {
-            return bool.Parse(ConfigurationManager.AppSettings["BackupManager.PingIisOnApplicationEnd"] ?? "False");
-        }
+        public static bool PingIisOnApplicationEnd => bool.Parse(ConfigurationManager.AppSettings["BackupManager.PingIisOnApplicationEnd"] ?? "False");
+        public static bool CheckUserGroups => bool.Parse(ConfigurationManager.AppSettings["BackupManager.CheckUserGroups"] ?? "True");
+        public static bool UseBasicAuth => bool.Parse(ConfigurationManager.AppSettings["BackupManager.UseBasicAuth"] ?? "True");
 
 
-        public static bool DatabaseExists(string databaseName, string dbConnectionString)
+        public static bool DatabaseExists(string dbConnectionString, string databaseName)
         {
+            if(string.IsNullOrEmpty(databaseName) || string.IsNullOrEmpty(dbConnectionString))
+                return false;
             var connStrBuilder = new SqlConnectionStringBuilder(dbConnectionString);
             connStrBuilder.ConnectTimeout = 3;
             try

@@ -7,12 +7,23 @@
 @using Microsoft.WindowsAzure.Storage
 @using Microsoft.WindowsAzure.Storage.Blob
 @{
-    if (!(User.IsInRole("WebAdmins") || User.IsInRole("CmsAdmins") || User.IsInRole("Administrators")))
+    //Authentication checks before any actions
+    if (SettingsFactory.UseBasicAuth && string.IsNullOrEmpty(Request.Headers["Authorization"]))
     {
-        Response.ClearContent();
-        Response.Write("Access Denied!");
-        Response.StatusCode = (int)HttpStatusCode.Forbidden;
+        Response.StatusCode = 401;
+        Response.AddHeader("WWW-Authenticate", "Basic realm=\"BackupManager\"");
+        Response.End();
         return;
+    }
+    if (SettingsFactory.CheckUserGroups)
+    {
+        if (!(User.IsInRole("WebAdmins") || User.IsInRole("CmsAdmins") || User.IsInRole("Administrators")))
+        {
+            Response.ClearContent();
+            Response.Write("Access Denied!");
+            Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            return;
+        }
     }
     OnLoad();
 }
@@ -133,13 +144,13 @@
                 <h3>Security and limitations</h3>
                 <p>
                     This tool is not meant for basic editors or users nor it's meant to very very large backups. It's meant that only developers, devops and hosting "Super Administrators" can use this tool.
-                    By default this tool check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators.<label for="" class="col-sm-4"
+                    By default this tool check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators.
                 </p>
 
             </div>
         </div>
  
-        @if (!Settings.DbExists)
+        @if (!SettingsFactory.DatabaseExists(Settings.DbConnectionString, Settings.DatabaseName))
         {
             <div class="alert alert-danger">Could not connect to database. Check the connection string!</div>
         }
@@ -153,37 +164,45 @@
             <div id="collapse-settings" class="panel-body panel-collapse collapse @Html.Raw(Request.Params["settings"] != null ? "" : "in")">
                 <form method="GET" role="form" action="@(Request.Url.AbsolutePath)">
                     <div class="form-group form-group-sm row">
-                        <label for="" class="col-sm-4">Local Repository Path <small>(IIS application pool user needs to have write and delete access to this folder)</small></label>
+                        <label for="" class="col-sm-4">Local Repository Path<br/><small>IIS application pool user needs to have write and delete access to this folder</small></label>
                         <div class="col-sm-8"><input type="text" name="localRepositoryPath" value="@Settings.LocalRepositoryPath" class="form-control" disabled="disabled" /></div>
                     </div>
                     <div class="form-group form-group-sm row">
-                        <label for="" class="col-sm-4">AppData Folder Path <small>(Path to the folder you want to backup/restore)</small></label>
-                        <div class="col-sm-8"><input type="text" name="appDataFolder" value="@Settings.AppDataFolder" class="form-control" /></div>
+                        <label for="" class="col-sm-4">Azure Repository<br/><small>Blob storage address</small></label>
+                        <div class="col-sm-8"><input type="text" name="azureRepositoryUrl" value="@(Settings.AzureRepositoryUrl)" class="form-control" disabled="disabled" /></div>
                     </div>
                     <div class="form-group form-group-sm row">
-                        <label for="" class="col-sm-4">Blob Storage Container Name <small>(folder name for blob storage)</small></label>
+                        <label for="" class="col-sm-4">Azure Blob Storage Container Name <br/><small>Folder name for blob storage</small></label>
                         <div class="col-sm-8"><input type="text" name="containerName" value="@Settings.ContainerName" class="form-control" /></div>
                     </div>
                     <div class="form-group form-group-sm row">
-                        <label for="" class="col-sm-4">Database Server Name <small>(Target of the backup/restore operations)</small></label>
+                        <label for="" class="col-sm-4">AppData Folder Path <br/><small>Path to the folder you want to backup/restore</small></label>
+                        <div class="col-sm-8"><input type="text" name="appDataFolder" value="@Settings.AppDataFolder" class="form-control" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Database Server Name <br/><small>Target of the backup/restore operations</small></label>
                         <div class="col-sm-8"><input type="text" name="databaseServerName" value="@Settings.DatabaseServerName" disabled="disabled" class="form-control" /></div>
                     </div>
                     <div class="form-group form-group-sm row">
-                        <label for="" class="col-sm-4">Database Name <small>(Target of the backup/restore operations)</small></label>
+                        <label for="" class="col-sm-4">Database Name <br/><small>Target of the backup/restore operations</small></label>
                         <div class="col-sm-8"><input type="text" name="databaseName" value="@Settings.DatabaseName" disabled="disabled" class="form-control" /></div>
                     </div>
                     <div class="form-group form-group-sm row">
-                        <label for="" class="col-sm-4">Database owner <small>(owner will get the same privileges to restored database)</small></label>
+                        <label for="" class="col-sm-4">Database owner <br/><small>Owner will get the same privileges to restored database</small></label>
                         <div class="col-sm-8"><input type="text" name="databaseOwner" value="@Settings.DatabaseOwner" disabled="disabled" class="form-control" /></div>
                     </div>
                     <div class="form-group form-group-sm row">
-                        <label for="" class="col-sm-4">Site Name <small>(target web site for restore)</small></label>
+                        <label for="" class="col-sm-4">Database Shared Folder Path  (optional) <br/><small>If SQL Server exists in another server, you need to have shared folder to transfer database</small></label>
+                        <div class="col-sm-8"><input type="text" name="dbSharedBackupFolder" value="@Settings.DbSharedBackupFolder" placeholder="\\ServerName\Shared\Folder\Path\" class="form-control" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Site Name (optional) <br/><small>Target web site which will be recycled after restore</small></label>
                         <div class="col-sm-8">
                             <select name="iisSiteName" class="form-control">
-                                @foreach (var sitekvp in GetIisSiteNames())
-                                {
-                                    <option value="@sitekvp.Value" @(Settings.IisSiteName == sitekvp.Value ? "selected":"") >@sitekvp.Key</option>
-                                }
+                            @foreach (var sitekvp in GetIisSiteNames())
+                            {
+                                <option value="@sitekvp.Value" @(Settings.IisSiteName == sitekvp.Value ? "selected":"") >@sitekvp.Key</option>
+                            }
                             </select>
                         </div>
                     </div>
@@ -356,7 +375,7 @@
                         <input type="hidden" name="action" value="addBackupJob" />
 
                         <div class="form-group">
-                            <label class="col-sm-3 control-label" for="">Job Name<small>(unique)</small></label>
+                            <label class="col-sm-3 control-label" for="">Job Name <small>(unique)</small></label>
                             <div class="col-sm-9">
                                 <input type="text" name="jobName" value="@(Request.Params["jobName"] ?? "Daily Azure Backup Job")" class="form-control" />
                             </div>
@@ -499,13 +518,21 @@
 
     public IList<KeyValuePair<string,string>> GetIisSiteNames()
     {
-        using (Microsoft.Web.Administration.ServerManager serverManager = new Microsoft.Web.Administration.ServerManager())
+        try
         {
-            var sites = serverManager.Sites?.Select(s => new KeyValuePair<string,string>(s.Name,s.Name))
-                                            .OrderBy(s => s.Key)
-                                            .ToList() ?? new List<KeyValuePair<string,string>>(){};
-            sites.Insert(0, new KeyValuePair<string,string>("-----", ""));
-            return sites;
+            using (Microsoft.Web.Administration.ServerManager serverManager = new Microsoft.Web.Administration.ServerManager())
+            {
+                var sites = serverManager.Sites?.Select(s => new KeyValuePair<string, string>(s.Name, s.Name))
+                    .OrderBy(s => s.Key)
+                    .ToList() ?? new List<KeyValuePair<string, string>>() {};
+                sites.Insert(0, new KeyValuePair<string, string>("-----", ""));
+                return sites;
+            }
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            LogService.WriteLog("Could not get IIS site names: " + e);
+            return new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("Could not get IIS site names!", "") };
         }
     }
 }

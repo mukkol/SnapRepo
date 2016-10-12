@@ -153,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Azure\BlobStorageService.cs" />
+    <Compile Include="Backups\DbBackupService.cs" />
     <Compile Include="Backups\BackupService.cs" />
     <Compile Include="Common\ActionService.cs" />
     <Compile Include="Common\InitializationModule.cs" />

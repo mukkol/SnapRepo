@@ -11,7 +11,7 @@ namespace AzureBackupManager.Scheduling
         
         public ScheduledJobPersistor()
         {
-            _localRepositoryPath = SettingsFactory.GetStaticLocalRepositoryPath();
+            _localRepositoryPath = SettingsFactory.StaticLocalRepositoryPath;
         }
 
         public void Store(BackupJobSettings[] backupJobs)

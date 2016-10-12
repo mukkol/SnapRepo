@@ -33,13 +33,22 @@ namespace AzureBackupManager.Scheduling
                 var started = DateTime.Now;
                 var logService = ObjectFactory.Container.GetInstance<LogService>();
                 logService.WriteLog($"Task STARTED (\"{Name}\")! Query: {_backupJobSettings.Query}.");
-                var result = GetQueryRequestStatusCode(_backupJobSettings.Query, _settings);
+                var result = "";
+                try
+                {
+                    result = ExecuteActionByQueryString(_backupJobSettings.Query, _settings);
+                }
+                catch (Exception e)
+                {
+                    logService.WriteLog($"Exception in Execution: {e}");
+                    return;
+                }
                 var duration = DateTime.Now.Subtract(started);
                 logService.WriteLog($"Task FINISHED (\"{Name}\")!! Duration: {duration.TotalMinutes} mins, Result: {result}.");
             }
         }
 
-        public static string GetQueryRequestStatusCode(string queryString, ManagerSettings settings)
+        public static string ExecuteActionByQueryString(string queryString, ManagerSettings settings)
         {
             var actionService = ObjectFactory.Container.GetInstance<ActionService>();
             NameValueCollection parms = HttpUtility.ParseQueryString(queryString);
