@@ -161,17 +161,17 @@
     <Compile Include="Common\IoC\StructureMapDependencyResolver.cs" />
     <Compile Include="Common\SettingsFactory.cs" />
     <Compile Include="Common\LogService.cs" />
-    <Compile Include="Scheduling\BackupJobSettings.cs" />
-    <Compile Include="Scheduling\BackupTask.cs" />
+    <Compile Include="Scheduling\JobProperties.cs" />
+    <Compile Include="Scheduling\ScheduledJob.cs" />
     <Compile Include="Scheduling\ScheduledJobService.cs" />
-    <Compile Include="Scheduling\ScheduledJobPersistor.cs" />
+    <Compile Include="Scheduling\JobPersistor.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Common\ManagerSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\PublishProfiles\*" />
-    <Compile Include="Scheduling\BackupRegistry.cs" />
+    <Compile Include="Scheduling\ScheduledJobRegistry.cs" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

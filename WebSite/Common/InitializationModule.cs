@@ -22,7 +22,7 @@ namespace AzureBackupManager.Common
             _logService = ObjectFactory.Container.GetInstance<LogService>();
             _logService.WriteLog("Application started!", true);
 
-            JobManager.Initialize(ObjectFactory.Container.GetInstance<BackupRegistry>());
+            JobManager.Initialize(ObjectFactory.Container.GetInstance<ScheduledJobRegistry>());
             JobManager.JobException += (info) => _logService.WriteLog("An error just happened with a scheduled job: " + info?.Exception, true);
 
             if (SettingsFactory.PingIisOnApplicationEnd)

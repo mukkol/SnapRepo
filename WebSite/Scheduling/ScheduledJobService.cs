@@ -6,14 +6,14 @@ namespace AzureBackupManager.Scheduling
 {
     public class ScheduledJobService
     {
-        private readonly ScheduledJobPersistor _scheduledJobPersistor;
+        private readonly JobPersistor _scheduledJobPersistor;
 
-        public ScheduledJobService(ScheduledJobPersistor scheduledJobPersistor)
+        public ScheduledJobService(JobPersistor scheduledJobPersistor)
         {
             _scheduledJobPersistor = scheduledJobPersistor;
         }
 
-        public void AddJob(BackupJobSettings job)
+        public void AddJob(JobProperties job)
         {
             var list = _scheduledJobPersistor.GetAll()
                 .ToList();
@@ -22,7 +22,7 @@ namespace AzureBackupManager.Scheduling
             ResetJobManager();
         }
 
-        public void RemoveJob(BackupJobSettings job)
+        public void RemoveJob(JobProperties job)
         {
             var list = _scheduledJobPersistor.GetAll()
                 .Where(j => j.Name != job.Name && j.Interval != job.Interval && j.AtHours != job.AtHours && j.AtMins != job.AtMins && j.Query == job.Query)
@@ -39,12 +39,12 @@ namespace AzureBackupManager.Scheduling
             ResetJobManager();
         }
 
-        public Tuple<BackupJobSettings, Schedule>[] GetJobSettingsAndSchedule()
+        public Tuple<JobProperties, Schedule>[] GetJobSettingsAndSchedule()
         {
-            return _scheduledJobPersistor.GetAll().Select(s => new Tuple<BackupJobSettings, Schedule>(s, JobManager.GetSchedule(s.Name))).ToArray();
+            return _scheduledJobPersistor.GetAll().Select(s => new Tuple<JobProperties, Schedule>(s, JobManager.GetSchedule(s.Name))).ToArray();
         }
 
-        public BackupJobSettings[] GetBackupJobSettingses()
+        public JobProperties[] GetBackupJobSettingses()
         {
             return _scheduledJobPersistor.GetAll();
         }
@@ -55,7 +55,7 @@ namespace AzureBackupManager.Scheduling
             {
                 JobManager.RemoveJob(schedule.Name);
             }
-            JobManager.Initialize(new BackupRegistry());
+            JobManager.Initialize(new ScheduledJobRegistry());
         }
 
     }

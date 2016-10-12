@@ -3,7 +3,7 @@ using AzureBackupManager.Common;
 
 namespace AzureBackupManager.Scheduling
 {
-    public class BackupJobSettings
+    public class JobProperties
     {
         public string Name { get; set; }
         public int Interval { get; set; }

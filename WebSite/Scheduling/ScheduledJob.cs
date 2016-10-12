@@ -8,15 +8,15 @@ using FluentScheduler;
 
 namespace AzureBackupManager.Scheduling
 {
-    public class BackupTask : IJob, IRegisteredObject
+    public class ScheduledJob : IJob, IRegisteredObject
     {
         private readonly object _lock = new object();
         private bool _shuttingDown;
         private readonly ManagerSettings _settings;
-        private readonly BackupJobSettings _backupJobSettings;
+        private readonly JobProperties _backupJobSettings;
         public string Name { get; set; }
 
-        public BackupTask(ManagerSettings settings, BackupJobSettings jobSettings)
+        public ScheduledJob(ManagerSettings settings, JobProperties jobSettings)
         {
             _settings = settings;
             _backupJobSettings = jobSettings;

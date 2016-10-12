@@ -5,34 +5,34 @@ using AzureBackupManager.Common;
 
 namespace AzureBackupManager.Scheduling
 {
-    public class ScheduledJobPersistor
+    public class JobPersistor
     {
         private readonly string _localRepositoryPath;
         
-        public ScheduledJobPersistor()
+        public JobPersistor()
         {
             _localRepositoryPath = SettingsFactory.StaticLocalRepositoryPath;
         }
 
-        public void Store(BackupJobSettings[] backupJobs)
+        public void Store(JobProperties[] backupJobs)
         {
             StreamWriter file = new StreamWriter(_localRepositoryPath + "ScheduledJobsRepository.json", false, Encoding.UTF8);
             file.WriteLine(Json.Encode(backupJobs));
             file.Close();
         }
 
-        public BackupJobSettings[] GetAll()
+        public JobProperties[] GetAll()
         {
             try
             {
                 StreamReader file = new StreamReader(_localRepositoryPath + "ScheduledJobsRepository.json", Encoding.UTF8);
                 var str = file.ReadToEnd();
-                var s = Json.Decode<BackupJobSettings[]>(str);
+                var s = Json.Decode<JobProperties[]>(str);
                 file.Close();
-                return s ?? new BackupJobSettings[] {};
+                return s ?? new JobProperties[] {};
             }
-            catch (FileNotFoundException) { return new BackupJobSettings[] { }; }
-            catch (DirectoryNotFoundException) { return new BackupJobSettings[] { }; }
+            catch (FileNotFoundException) { return new JobProperties[] { }; }
+            catch (DirectoryNotFoundException) { return new JobProperties[] { }; }
         }
 
     }

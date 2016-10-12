@@ -61,7 +61,7 @@ namespace AzureBackupManager.Common
                     break;
                 case "addBackupJob":
                     _scheduledJobService.AddJob(
-                        new BackupJobSettings()
+                        new JobProperties()
                         {
                             Name = requestParams["jobName"],
                             Interval = int.Parse(requestParams["interval"]),
