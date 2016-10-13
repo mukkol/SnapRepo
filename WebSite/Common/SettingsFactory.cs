@@ -53,10 +53,8 @@ namespace AzureBackupManager.Common
 
 
         public static string StaticLocalRepositoryPath =>  ConfigurationManager.AppSettings["BackupManager.LocalRepositoryPath"]
-                                                        ?? (new DirectoryInfo(HttpContext.Current.Server.MapPath("~")).Parent?.Parent?.FullName 
-                                                        ?? "C:\\temp") + "\\BackupManagerRepository\\";
-
-        public static bool PingIisOnApplicationEnd => bool.Parse(ConfigurationManager.AppSettings["BackupManager.PingIisOnApplicationEnd"] ?? "False");
+                                                        ?? (new DirectoryInfo(HttpContext.Current.Server.MapPath("~")).Parent?.Parent?.FullName ?? "C:\\temp") 
+                                                            + "\\BackupManagerRepository\\";
         public static bool CheckUserGroups => bool.Parse(ConfigurationManager.AppSettings["BackupManager.CheckUserGroups"] ?? "True");
         public static bool UseBasicAuth => bool.Parse(ConfigurationManager.AppSettings["BackupManager.UseBasicAuth"] ?? "True");
 
