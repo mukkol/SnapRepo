@@ -82,7 +82,7 @@ namespace SnapRepo.Backups
 
         private static string CreateBackupPackage(string localRepositoryPath, string dbBackupFileName, string appDataZipFileName, string backupInfix)
         {
-            var infix = string.IsNullOrEmpty(backupInfix) ? "_" : "_" + backupInfix.Replace(" ", "") + "_";
+            var infix = "_" + backupInfix?.Replace(" ", "") + "_";
             string zipFileNamePrefix = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}{infix}{Environment.MachineName}_package";
             string zipFileName = $"{zipFileNamePrefix}.zip";
             using (ZipFile zip = new ZipFile())
