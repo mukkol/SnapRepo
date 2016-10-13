@@ -32,7 +32,7 @@ namespace SnapRepo.Common
                                 ?? "C:\\Path\\To\\AppData\\Folder",
                 ContainerName = requestParams["containerName"]
                                 ?? ConfigurationManager.AppSettings["SnapRepo.ContainerName"]
-                                ?? "backup-manager-repository",
+                                ?? "backup-repository",
                 DatabaseOwner = requestParams["databaseOwner"]
                                 ?? ConfigurationManager.AppSettings["SnapRepo.DatabaseOwner"]
                                 ?? GetDbOwner(databaseName, dBConnectionString)
