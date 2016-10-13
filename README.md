@@ -104,8 +104,8 @@
 </ol>
 <h4>Two different ways to run it</h4>
 <ol>
-    <li><b>Parallel web site <i>(recommended)</i></b> which will access the project's resources. <i>(More secure and optimal way)</i></li>
-    <li><b>Inside of target web site</b> which you are targeting the backups. It can be Episerver web site or any other type. <i>(Easier to maintain)</i></li>
+    <li>Parallel web site <i>(recommended)</i> which will access the project's resources. <i>(More secure and optimal way)</i></li>
+    <li>Inside of target web site which you are targeting the backups. It can be Episerver web site or any other type. <i>(Easier to maintain)</i></li>
 </ol>
 <h4>Transferring the backups</h4>
 <p>To be able to transferring the backups easily from environment to another, it's required that this tool is installed in all the environments. Only the Azure Blob storage remain the same in all environments.</p>
