@@ -2,11 +2,11 @@
 using System.Collections.Specialized;
 using System.Web;
 using System.Web.Hosting;
-using AzureBackupManager.Common;
-using AzureBackupManager.Common.IoC;
+using SnapRepo.Common;
+using SnapRepo.Common.IoC;
 using FluentScheduler;
 
-namespace AzureBackupManager.Scheduling
+namespace SnapRepo.Scheduling
 {
     public class ScheduledJob : IJob, IRegisteredObject
     {

@@ -1,1 +1,1 @@
-﻿<%@ Application Codebehind="Global.asax.cs" Inherits="AzureBackupManager.Global" Language="C#" %>
+﻿<%@ Application Codebehind="Global.asax.cs" Inherits="SnapRepo.Global" Language="C#" %>

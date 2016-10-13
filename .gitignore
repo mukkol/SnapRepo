@@ -4,7 +4,7 @@ WebSite/connectionStrings.config
 [Oo]bj/
 .vs/
 **/packages/*
-BackupManagerRepository/
+SnapRepository/
 **/PublishProfiles/*
 */appSettings.config
 WebSite/appSettings.config

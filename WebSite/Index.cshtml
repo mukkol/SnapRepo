@@ -1,9 +1,9 @@
 ﻿@inherits System.Web.WebPages.WebPage
 @using System.Reflection
-@using AzureBackupManager.Azure
-@using AzureBackupManager.Common
-@using AzureBackupManager.Common.IoC
-@using AzureBackupManager.Scheduling
+@using SnapRepo.Azure
+@using SnapRepo.Common
+@using SnapRepo.Common.IoC
+@using SnapRepo.Scheduling
 @using Microsoft.WindowsAzure.Storage
 @using Microsoft.WindowsAzure.Storage.Blob
 @{
@@ -12,7 +12,7 @@
     {
         //The IIS basic authentication has to be enabled!
         Response.StatusCode = 401;
-        Response.AddHeader("WWW-Authenticate", "Basic realm=\"BackupManager\"");
+        Response.AddHeader("WWW-Authenticate", "Basic realm=\"SnapRepo\"");
         Response.End();
         return;
     }
@@ -35,7 +35,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Azure Backup Manager</title>
+    <title>SnapRepo - Snapshot Backup Azure Repository</title>
     <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.7/yeti/bootstrap.min.css">
@@ -46,18 +46,18 @@
         <div class="page-header">
             <a class="pull-right btn btn-primary btn-xs" href="?@($"&settings={SettingsUrlParam}")">refresh window (without action)</a>
             <h1>
-                Azure Backup Manager
+                SnapRepo - Snapshot Backup Azure Repository
                 <a href="#" data-toggle="collapse" data-target="#collapse-info"><span class="badge"><i class="glyphicon glyphicon-info-sign"></i> Information</span></a>
             </h1>
             <div id="collapse-info" class="panel-body collapse">
-                <h3>Manager is for automating backups and restores</h3>
+                <h3>SnapRepo is for automating backups and restores</h3>
                 <p>
-                    Azure Backup Manager is mainly targeted for handling and automating backups and restoring data of web site projects (like Episerver CMS).
+                    SnapRepo is mainly targeted for handling and automating backups and restoring data of web site projects (like Episerver CMS).
                     It's backing up data to Azure Blob storage from virtual machines or local server and restoring it vice versa.
                     Backup data includes SQL Server Database and AppData folders and it's extendable for other storages.
                 </p>
 
-                <h3>Manager is designed for following use cases and purposes</h3>
+                <h3>SnapRepo is designed for following use cases and purposes</h3>
                 <ul>
                     <li><b>Managing backup archives</b>
                         <ul><li>List, Create, Delete, Download and Upload backups</li></ul>
@@ -78,9 +78,9 @@
                 </ul>
 
                 <h3>Installation</h3>
-                <p>This instruction is to install the manager as parallel web site which exists in same server or at least in same network.</p>
+                <p>This instruction is to install the SnapRepo as parallel web site which exists in same server or at least in same network.</p>
                 <ol>
-                    <li>Create IIS site based on the <a href="https://github.com/huilaaja/AzureBackupManager" target="_blank">GitHub repository</a> sources</li>
+                    <li>Create IIS site based on the <a href="https://github.com/huilaaja/SnapRepo" target="_blank">GitHub repository</a> sources</li>
                     <li>Enable IIS Basic Authentication or implement your own authentication.</li>
                     <li>Create Azure Blob Storage (type: private)</li>
                     <li>
@@ -92,16 +92,16 @@
                                 Example: &lt;add name="AzureBackupBlobStorage" connectionString="DefaultEndpointsProtocol=[http|https];AccountName=accountName;AccountKey=accountKey" /&gt;
                             </li>
                             <li>
-                                <b>BackupManager</b><br/>
+                                <b>SnapRepo</b><br/>
                                 Connection string to SQL Server (with high user privileges)<br/>
-                                Example: &lt;add name="BackupManager" connectionString="Data Source=(local);Initial Catalog=DatabaseName;User ID=sa;Password=sa_password;Connection Timeout=1800;Integrated Security=False;MultipleActiveResultSets=True" providerName="System.Data.SqlClient" /&gt;
+                                Example: &lt;add name="SnapRepo" connectionString="Data Source=(local);Initial Catalog=DatabaseName;User ID=sa;Password=sa_password;Connection Timeout=1800;Integrated Security=False;MultipleActiveResultSets=True" providerName="System.Data.SqlClient" /&gt;
                             </li>
                         </ol>
                     </li>
                     <li>Make sure that following settings are correct
                         <ul>
                             <li>Make sure your IIS application user has access to required resources (folders) and SQL Server user (in connection string) has necessary privileges.</li>
-                            <li>Backup manager needs to have long timeouts for requests and db connections. By default this site has 60min (3600secs) timeouts and SQL Connection timeout is set to 30 minutes (1800secs).</li>
+                            <li>SnapRepo needs to have long timeouts for requests and db connections. By default this site has 60min (3600secs) timeouts and SQL Connection timeout is set to 30 minutes (1800secs).</li>
                             <li>
                                 Scheduled services required that the IIS site needs to be alive all the time.
                                 So you need to set:
@@ -120,19 +120,19 @@
                 <p>From web.config &lt;appSettings&gt; you can change the default configuration of following settings:</p>
                 <ul>
                     <li>Local repository path:<br/>
-                        &lt;add key="BackupManager.LocalRepositoryPath" value="C:\Sites\ExampleSite\BackupManagerRepository\"/&gt;</li>
+                        &lt;add key="SnapRepo.LocalRepositoryPath" value="C:\Sites\ExampleSite\SnapRepository\"/&gt;</li>
                     <li>AppData folder path:<br/>
-                        &lt;add key="BackupManager.AppDataFolder" value="C:\Sites\ExampleSite\AppData" /&gt;</li>
+                        &lt;add key="SnapRepo.AppDataFolder" value="C:\Sites\ExampleSite\AppData" /&gt;</li>
                     <li>IIS site name:<br/>
-                        &lt;add key="BackupManager.IisSiteName" value="ExampleSite" /&gt;</li>
+                        &lt;add key="SnapRepo.IisSiteName" value="ExampleSite" /&gt;</li>
                     <li>Blob storage container name:<br/>
-                        &lt;add key="BackupManager.ContainerName" value="CustomBlobStorageContainerName"/&gt;</li>
+                        &lt;add key="SnapRepo.ContainerName" value="CustomBlobStorageContainerName"/&gt;</li>
                     <li>Database shared folder path (for transferring database backup):<br/>
-                        &lt;add key="BackupManager.DbSharedBackupFolder" value="\\ServerName\Shared\Folder\"/&gt;</li>
+                        &lt;add key="SnapRepo.DbSharedBackupFolder" value="\\ServerName\Shared\Folder\"/&gt;</li>
                     <li>Disabling basic authentication:<br/>
-                        &lt;add key="BackupManager.UseBasicAuth" value="False" /&gt;</li>
+                        &lt;add key="SnapRepo.UseBasicAuth" value="False" /&gt;</li>
                     <li>Disabling user group checks:<br/>
-                        &lt;add key="BackupManager.CheckUserGroups" value="False"/&gt;</li>
+                        &lt;add key="SnapRepo.CheckUserGroups" value="False"/&gt;</li>
                 </ul>
 
                 <h3>Requirements and inside information</h3>
@@ -159,7 +159,7 @@
                 </ol>
                 <h4>Transferring the backups</h4>
                 <p>To be able to transferring the backups easily from environment to another, it's required that this tool is installed in all the environments. Only the Azure Blob storage remain the same in all environments.</p>
-                <h4>Backup manager requires lot of privileges</h4>
+                <h4>SnapRepo requires lot of privileges</h4>
                 <ul>
                     <li>IIS application pool user needs to have write and delete access to Local Repository -folder and AppData-folder.</li>
                     <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>

@@ -4,46 +4,46 @@ using System.Configuration;
 using System.Data.SqlClient;
 using System.IO;
 using System.Web;
-using AzureBackupManager.Azure;
+using SnapRepo.Azure;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 
-namespace AzureBackupManager.Common
+namespace SnapRepo.Common
 {
     public static class SettingsFactory
     {
-        public const string BackupManagerConnectionStringName = "BackupManager";
+        public const string SnapRepoConnectionStringName = "SnapRepo";
         public const string AzureBlobStorageConnectionStringName = "AzureBackupBlobStorage";
 
         public static ManagerSettings CreateSettingsFromParamsOrDefault(NameValueCollection requestParams = null)
         {
             if (requestParams == null) requestParams = new NameValueCollection();
-            var dBConnectionString = ConfigurationManager.ConnectionStrings[BackupManagerConnectionStringName]?.ConnectionString;
+            var dBConnectionString = ConfigurationManager.ConnectionStrings[SnapRepoConnectionStringName]?.ConnectionString;
             var blobStorageConnectionString = BlobStorageService.BlobStorageConnectionString;
             var databaseName = requestParams["databaseName"]
-                               ?? ConfigurationManager.AppSettings["BackupManager.DatabaseName"]
+                               ?? ConfigurationManager.AppSettings["SnapRepo.DatabaseName"]
                                ?? new SqlConnectionStringBuilder(dBConnectionString).InitialCatalog;
             return new ManagerSettings()
             {
                 LocalRepositoryPath = StaticLocalRepositoryPath,
                 AppDataFolder = requestParams["appDataFolder"]
-                                ?? ConfigurationManager.AppSettings["BackupManager.AppDataFolder"]
+                                ?? ConfigurationManager.AppSettings["SnapRepo.AppDataFolder"]
                                 ?? TryGetEpiserverAppDataPath()
                                 ?? "C:\\Path\\To\\AppData\\Folder",
                 ContainerName = requestParams["containerName"]
-                                ?? ConfigurationManager.AppSettings["BackupManager.ContainerName"]
+                                ?? ConfigurationManager.AppSettings["SnapRepo.ContainerName"]
                                 ?? "backup-manager-repository",
                 DatabaseOwner = requestParams["databaseOwner"]
-                                ?? ConfigurationManager.AppSettings["BackupManager.DatabaseOwner"]
+                                ?? ConfigurationManager.AppSettings["SnapRepo.DatabaseOwner"]
                                 ?? GetDbOwner(databaseName, dBConnectionString)
                                 ?? "DbOwner",
                 DatabaseServerName = requestParams["databaseServerName"]
-                                ?? ConfigurationManager.AppSettings["BackupManager.DatabaseServerName"]
+                                ?? ConfigurationManager.AppSettings["SnapRepo.DatabaseServerName"]
                                 ?? new SqlConnectionStringBuilder(dBConnectionString).DataSource,
                 IisSiteName = requestParams["iisSiteName"]
-                                ?? ConfigurationManager.AppSettings["BackupManager.IisSiteName"],
+                                ?? ConfigurationManager.AppSettings["SnapRepo.IisSiteName"],
                 DbSharedBackupFolder = requestParams["dbSharedBackupFolder"]
-                                ?? ConfigurationManager.AppSettings["BackupManager.DbSharedBackupFolder"],
+                                ?? ConfigurationManager.AppSettings["SnapRepo.DbSharedBackupFolder"],
                 DatabaseName = databaseName,
                 DbConnectionString = dBConnectionString,
                 BlobStorageConnectionString = blobStorageConnectionString,
@@ -52,11 +52,11 @@ namespace AzureBackupManager.Common
         }
 
 
-        public static string StaticLocalRepositoryPath =>  ConfigurationManager.AppSettings["BackupManager.LocalRepositoryPath"]
+        public static string StaticLocalRepositoryPath =>  ConfigurationManager.AppSettings["SnapRepo.LocalRepositoryPath"]
                                                         ?? (new DirectoryInfo(HttpContext.Current.Server.MapPath("~")).Parent?.Parent?.FullName ?? "C:\\temp") 
-                                                            + "\\BackupManagerRepository\\";
-        public static bool CheckUserGroups => bool.Parse(ConfigurationManager.AppSettings["BackupManager.CheckUserGroups"] ?? "True");
-        public static bool UseBasicAuth => bool.Parse(ConfigurationManager.AppSettings["BackupManager.UseBasicAuth"] ?? "True");
+                                                            + "\\SnapRepository\\";
+        public static bool CheckUserGroups => bool.Parse(ConfigurationManager.AppSettings["SnapRepo.CheckUserGroups"] ?? "True");
+        public static bool UseBasicAuth => bool.Parse(ConfigurationManager.AppSettings["SnapRepo.UseBasicAuth"] ?? "True");
 
 
         public static bool DatabaseExists(string dbConnectionString, string databaseName)

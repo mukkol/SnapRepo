@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Data.SqlClient;
 using System.IO;
-using AzureBackupManager.Common;
+using SnapRepo.Common;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 
-namespace AzureBackupManager.Backups
+namespace SnapRepo.Backups
 {
     public class DbBackupService
     {

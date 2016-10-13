@@ -2,7 +2,7 @@
 using System.Linq;
 using FluentScheduler;
 
-namespace AzureBackupManager.Scheduling
+namespace SnapRepo.Scheduling
 {
     public class ScheduledJobService
     {

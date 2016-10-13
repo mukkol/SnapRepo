@@ -1,7 +1,7 @@
 ﻿using System;
-using AzureBackupManager.Common;
+using SnapRepo.Common;
 
-namespace AzureBackupManager
+namespace SnapRepo
 {
     public class Global : System.Web.HttpApplication
     {

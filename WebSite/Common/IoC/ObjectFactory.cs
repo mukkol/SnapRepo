@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Threading;
 using System.Web.Mvc;
-using AzureBackupManager.Azure;
-using AzureBackupManager.Backups;
-using AzureBackupManager.Scheduling;
+using SnapRepo.Azure;
+using SnapRepo.Backups;
+using SnapRepo.Scheduling;
 using StructureMap;
 using StructureMap.Graph;
 
-namespace AzureBackupManager.Common.IoC
+namespace SnapRepo.Common.IoC
 {
     public static class ObjectFactory
     {

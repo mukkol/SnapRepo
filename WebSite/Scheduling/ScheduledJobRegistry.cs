@@ -1,7 +1,7 @@
-﻿using AzureBackupManager.Common.IoC;
+﻿using SnapRepo.Common.IoC;
 using FluentScheduler;
 
-namespace AzureBackupManager.Scheduling
+namespace SnapRepo.Scheduling
 {
     public class ScheduledJobRegistry : Registry
     {

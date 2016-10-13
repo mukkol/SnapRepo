@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Web;
-using AzureBackupManager.Common.IoC;
-using AzureBackupManager.Scheduling;
+using SnapRepo.Common.IoC;
+using SnapRepo.Scheduling;
 using FluentScheduler;
 
-namespace AzureBackupManager.Common
+namespace SnapRepo.Common
 {
     public class InitializationModule : IHttpModule
     {

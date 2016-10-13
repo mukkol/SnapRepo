@@ -1,11 +1,11 @@
 ﻿using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
-using AzureBackupManager.Azure;
-using AzureBackupManager.Backups;
-using AzureBackupManager.Scheduling;
+using SnapRepo.Azure;
+using SnapRepo.Backups;
+using SnapRepo.Scheduling;
 
-namespace AzureBackupManager.Common
+namespace SnapRepo.Common
 {
     public class ActionService
     {

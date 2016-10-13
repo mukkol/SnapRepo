@@ -1,6 +1,6 @@
 ﻿using System.Web.Helpers;
 
-namespace AzureBackupManager.Common
+namespace SnapRepo.Common
 {
     public class ManagerSettings
     {

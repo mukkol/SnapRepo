@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace AzureBackupManager.Common
+namespace SnapRepo.Common
 {
     public class LogService
     {

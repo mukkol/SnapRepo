@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Text;
 using System.Web.Helpers;
-using AzureBackupManager.Common;
+using SnapRepo.Common;
 
-namespace AzureBackupManager.Scheduling
+namespace SnapRepo.Scheduling
 {
     public class JobPersistor
     {

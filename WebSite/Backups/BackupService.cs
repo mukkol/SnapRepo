@@ -1,12 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using AzureBackupManager.Azure;
-using AzureBackupManager.Common;
+using SnapRepo.Azure;
+using SnapRepo.Common;
 using Ionic.Zip;
 using Microsoft.Web.Administration;
 
-namespace AzureBackupManager.Backups
+namespace SnapRepo.Backups
 {
     public class BackupService
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Web.Mvc;
 using StructureMap;
 
-namespace AzureBackupManager.Common.IoC
+namespace SnapRepo.Common.IoC
 {
     public class StructureMapDependencyResolver : IDependencyResolver
     {

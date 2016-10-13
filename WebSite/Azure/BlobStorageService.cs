@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using AzureBackupManager.Common;
+using SnapRepo.Common;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 
-namespace AzureBackupManager.Azure
+namespace SnapRepo.Azure
 {
     public class BlobStorageService
     {
