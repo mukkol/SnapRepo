@@ -10,6 +10,7 @@
     //Authentication checks before any actions
     if (SettingsFactory.UseBasicAuth && string.IsNullOrEmpty(Request.Headers["Authorization"]))
     {
+        //The IIS basic authentication has to be enabled!
         Response.StatusCode = 401;
         Response.AddHeader("WWW-Authenticate", "Basic realm=\"BackupManager\"");
         Response.End();
@@ -17,6 +18,7 @@
     }
     if (SettingsFactory.CheckUserGroups)
     {
+        //You can also use your own authentication method.
         if (!(User.IsInRole("WebAdmins") || User.IsInRole("CmsAdmins") || User.IsInRole("Administrators")))
         {
             Response.ClearContent();
