@@ -72,6 +72,7 @@ namespace SnapRepo.Backups
 
                 using (var command = new SqlCommand(query, connection))
                 {
+                    command.CommandTimeout = 0;
                     connection.Open();
                     command.ExecuteNonQuery();
                     connection.Close();
@@ -96,7 +97,9 @@ namespace SnapRepo.Backups
                 if (exists) { new SqlCommand($"ALTER DATABASE {dbName} SET Single_User WITH Rollback Immediate", connection).ExecuteNonQuery(); }
                 try
                 {
-                    new SqlCommand($"RESTORE DATABASE {dbName} FROM DISK='{dbBackupFileFullPath}' WITH RECOVERY, REPLACE", connection).ExecuteNonQuery();
+                    var command = new SqlCommand($"RESTORE DATABASE {dbName} FROM DISK='{dbBackupFileFullPath}' WITH RECOVERY, REPLACE", connection);
+                    command.CommandTimeout = 0;
+                    command.ExecuteNonQuery();
                 }
                 finally
                 {
