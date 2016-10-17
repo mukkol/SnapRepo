@@ -7,6 +7,12 @@
 @using Microsoft.WindowsAzure.Storage
 @using Microsoft.WindowsAzure.Storage.Blob
 @{
+    //It's recommended to use HTTPS with basic authentication
+    if (SettingsFactory.ForceHttps && Request.Url.Scheme != "https")
+    {
+        Response.Redirect(Request.Url.AbsoluteUri.Replace("http", "https"), true);
+        return;
+    }
     //Authentication checks before any actions
     if (SettingsFactory.UseBasicAuth && string.IsNullOrEmpty(Request.Headers["Authorization"]))
     {
