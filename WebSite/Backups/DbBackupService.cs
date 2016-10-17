@@ -27,8 +27,7 @@ namespace SnapRepo.Backups
                                             ? dbBackupFolderFullPath + databaseFileName
                                             : dbBackupFileLocalRepositoryPath;
             if (useSharedRestoreFolder)
-            {
-                //Backup folder is not in local repository folder
+            {   //Backup folder is not in local repository folder
                 _logService.WriteLog($"Moving DB to Restore Folder ({dbBackupFileRestoreFullPath})");
                 if(File.Exists(dbBackupFileRestoreFullPath))
                     File.Delete(dbBackupFileRestoreFullPath);
@@ -67,7 +66,6 @@ namespace SnapRepo.Backups
             using (var connection = new SqlConnection(scsb.ConnectionString))
             {
                 connection.InfoMessage += (sender, args) => info += args.Message + Environment.NewLine;
-                //TODO: SqlServer.SMO would be better tool for this
                 var query = $"BACKUP DATABASE {dbName} TO DISK='{dbBackupFileFullPath}' WITH COPY_ONLY";
 
                 using (var command = new SqlCommand(query, connection))
@@ -84,21 +82,21 @@ namespace SnapRepo.Backups
         public void RestoreDb(string dbConnectionString, string dbName, string dbBackupFileFullPath, out string infoMessage)
         {
             string info = "";
-            //TODO: for new database needs to relocate the files (.mdf and .lgf files)
             var scsb = new SqlConnectionStringBuilder(dbConnectionString);
             scsb.InitialCatalog = "master";
             using (var connection = new SqlConnection(scsb.ConnectionString))
             {
                 connection.InfoMessage += (sender, args) => info += args.Message + Environment.NewLine;
                 connection.Open();
-                //TODO: SqlServer.SMO or move files
                 bool exists = (int)(new SqlCommand($"SELECT count(*) FROM master.dbo.sysdatabases where name = '{dbName}'", connection).ExecuteScalar()) > 0;
                 //kick all users out (alias close connections) before restore.
                 if (exists) { new SqlCommand($"ALTER DATABASE {dbName} SET Single_User WITH Rollback Immediate", connection).ExecuteNonQuery(); }
+                string moveDbFolder = exists ? null : GetServerDefaultDatabaseFolderPath(connection);
                 try
                 {
-                    var command = new SqlCommand($"RESTORE DATABASE {dbName} FROM DISK='{dbBackupFileFullPath}' WITH RECOVERY, REPLACE", connection);
-                    command.CommandTimeout = 0;
+                    string withCmd= moveDbFolder == null ? "RECOVERY" : $"MOVE '{dbName}' TO '{moveDbFolder}{dbName}.mdf', MOVE '{dbName}_Log' TO '{moveDbFolder}{dbName}_Log.LDF', RECOVERY";
+                    var command = new SqlCommand( $"RESTORE DATABASE {dbName} FROM DISK='{dbBackupFileFullPath}' WITH {withCmd}",connection) {CommandTimeout = 0};
+                    _logService.WriteLog("Restore command:" + command.CommandText);
                     command.ExecuteNonQuery();
                 }
                 finally
@@ -116,8 +114,12 @@ namespace SnapRepo.Backups
                 return;
             Server server = new Server(new ServerConnection(new SqlConnection(settings.DbConnectionString)));
             Database database = server.Databases[dbName];
-            database.SetOwner(settings.DatabaseOwner, true);
-            database.Refresh();
+            try
+            {
+                database.SetOwner(settings.DatabaseOwner, true);
+                database.Refresh();
+            }
+            catch (SmoException) { _logService.WriteLog($"User ({settings.DatabaseOwner}) does not exists in SQL Server!"); }
         }
 
         private static string GetDbBackupFolderFullPath(ManagerSettings settings)
@@ -125,6 +127,11 @@ namespace SnapRepo.Backups
             return !string.IsNullOrEmpty(settings.DbSharedBackupFolder)
                 ? settings.DbSharedBackupFolder
                 : settings.LocalRepositoryPath;
+        }
+
+        private static string GetServerDefaultDatabaseFolderPath(SqlConnection connection)
+        {
+            return new SqlCommand("SELECT SUBSTRING(physical_name, 1, CHARINDEX(N'master.mdf', LOWER(physical_name)) - 1) FROM master.sys.master_files WHERE database_id = 1 AND file_id = 1", connection).ExecuteScalar() as string;
         }
 
         private static string GetDbBackupFileName(string dbName)
