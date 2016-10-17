@@ -12,12 +12,14 @@ namespace SnapRepo.Common
         private readonly BlobStorageService _blobStorageService;
         private readonly BackupService _backupService;
         private readonly ScheduledJobService _scheduledJobService;
+        private readonly LogService _logService;
 
-        public ActionService(BlobStorageService blobStorageService, BackupService backupService, ScheduledJobService scheduledJobService)
+        public ActionService(BlobStorageService blobStorageService, BackupService backupService, ScheduledJobService scheduledJobService, LogService logService)
         {
             _blobStorageService = blobStorageService;
             _backupService = backupService;
             _scheduledJobService = scheduledJobService;
+            _logService = logService;
         }
 
         public string CreateActionResult(NameValueCollection requestParams, ManagerSettings settings)
@@ -25,6 +27,10 @@ namespace SnapRepo.Common
             string actionResult = null;
             switch (requestParams["action"])
             {
+                case "ping":
+                    actionResult = "Pong!";
+                    _logService.WriteLog("Pong!");
+                    break;
                 case "setSettings":
                     //Creates the directory if it does not exist or throws an error if IIS user does not have privileges.
                     Directory.CreateDirectory(settings.LocalRepositoryPath);

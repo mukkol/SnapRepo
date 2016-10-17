@@ -44,7 +44,7 @@
 <body>
     <div class="container">
         <div class="page-header">
-            <a class="pull-right btn btn-primary btn-xs" href="?@($"&settings={SettingsUrlParam}")">refresh window (without action)</a>
+            <a class="pull-right btn btn-primary btn-xs" href="?@($"&settings={SettingsUrlParam}")">refresh data</a>
             <h1>
                 SnapRepo - Snapshot Backup Azure Repository
                 <a href="#" data-toggle="collapse" data-target="#collapse-info"><span class="badge"><i class="glyphicon glyphicon-info-sign"></i> Information</span></a>
@@ -520,7 +520,6 @@
         LogService = ObjectFactory.Container.GetInstance<LogService>();
         ActionService = ObjectFactory.Container.GetInstance<ActionService>();
 
-        ActionResult = ActionService.CreateActionResult(Request.Params, Settings);
         if (Request.Params["action"] == "logs")
         {
             Response.ClearContent();
@@ -530,6 +529,17 @@
             Response.End();
             return;
         }
+        ActionResult = ActionService.CreateActionResult(Request.Params, Settings);
+        if (ActionResult != null)
+        {
+            //Do redirect so F5 (refresh) wont do duplicate the action.
+            Response.Redirect($"{Request.Url.AbsolutePath}?action=result&result={HttpUtility.UrlEncode(ActionResult)}&settings={SettingsUrlParam}");
+        }
+        if (Request.Params["action"] == "result")
+        {
+            ActionResult = Request.Params["result"];
+        }
+
     }
 
     public ICloudBlob[] GetAzureBlobStorageBackups()
@@ -563,7 +573,7 @@
 @helper CreateTableFromList(IEnumerable<object> list)
 {
     var array = list?.ToArray() ?? new object[]{};
-    object firstItem = array?.FirstOrDefault();
+    object firstItem = array.FirstOrDefault();
     var firstItemProperties = firstItem?.GetType().GetProperties() ?? new PropertyInfo[] { };
     <table class="table table-condensed table-hover">
         <thead>
