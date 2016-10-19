@@ -82,6 +82,10 @@ namespace SnapRepo.Common
                     _scheduledJobService.RemoveJob(requestParams["jobName"]);
                     actionResult = "Scheduled job is DELETED!";
                     break;
+                case "restartIisSite":
+                    _backupService.RestartIisSite(settings.IisSiteName);
+                    actionResult = $"IIS site ({settings.IisSiteName}) is restarted!";
+                    break;
             }
             return actionResult;
         }

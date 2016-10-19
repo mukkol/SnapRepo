@@ -52,8 +52,15 @@ namespace SnapRepo.Backups
             _dbBackupService.SetDbOwner(settings, settings.DatabaseName);
             _logService.WriteLog($"Set DB ({settings.DatabaseName}) Owner ({settings.DatabaseOwner})");
             Directory.Delete(backupFolderPath, true);
+            if (iisreset)
+            {
+                RestartIisSite(siteName);
+            }
+        }
 
-            if (iisreset && !string.IsNullOrEmpty(siteName))
+        public void RestartIisSite(string siteName)
+        {
+            if (!string.IsNullOrEmpty(siteName))
             {
                 _logService.WriteLog($"Trying to recycle IIS site ({siteName}).");
                 using (ServerManager iisManager = new ServerManager())
