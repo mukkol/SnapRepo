@@ -29,7 +29,6 @@ namespace SnapRepo.Common
             {
                 case "ping":
                     actionResult = "Pong!";
-                    _logService.WriteLog("Pong!");
                     break;
                 case "setSettings":
                     //Creates the directory if it does not exist or throws an error if IIS user does not have privileges.
@@ -87,6 +86,7 @@ namespace SnapRepo.Common
                     actionResult = $"IIS site ({settings.IisSiteName}) is restarted!";
                     break;
             }
+            _logService.WriteLog(actionResult);
             return actionResult;
         }
     }

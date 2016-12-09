@@ -31,11 +31,12 @@ namespace SnapRepo.Backups
             return backupFileName;
         }
 
-        public string BackupAzure(ManagerSettings settings, string backupInfix)
+        public string BackupAzure(ManagerSettings settings, string backupInfix, bool deleteLocalBackup = true)
         {
             var backupFileName = BackupLocal(settings, backupInfix);
             var uri = _blobStorageService.SendBackupPackage(settings, backupFileName);
-            File.Delete(settings.LocalRepositoryPath + backupFileName);
+            if(deleteLocalBackup)
+                File.Delete(settings.LocalRepositoryPath + backupFileName);
             return uri;
         }
 
@@ -76,9 +77,10 @@ namespace SnapRepo.Backups
             }
         }
 
-        private static string ZipAppDataFolder(string localRepositoryPath, string appDataFolder)
+        private string ZipAppDataFolder(string localRepositoryPath, string appDataFolder)
         {
             string fileName = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}_{Environment.MachineName}_AppData.zip";
+            _logService.WriteLog($"Creating AppData zip file {fileName}.");
             using (ZipFile zip = new ZipFile())
             {
                 zip.AddDirectory(appDataFolder);
@@ -87,11 +89,12 @@ namespace SnapRepo.Backups
             return fileName;
         }
 
-        private static string CreateBackupPackage(string localRepositoryPath, string dbBackupFileName, string appDataZipFileName, string backupInfix)
+        private string CreateBackupPackage(string localRepositoryPath, string dbBackupFileName, string appDataZipFileName, string backupInfix)
         {
             var infix = "_" + backupInfix?.Replace(" ", "") + "_";
             string zipFileNamePrefix = $"{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}{infix}{Environment.MachineName}_package";
             string zipFileName = $"{zipFileNamePrefix}.zip";
+            _logService.WriteLog($"Creating Package zip file {zipFileName}.");
             using (ZipFile zip = new ZipFile())
             {
                 zip.AddFile($"{localRepositoryPath}{dbBackupFileName}", zipFileNamePrefix);
@@ -101,7 +104,7 @@ namespace SnapRepo.Backups
             return zipFileName;
         }
 
-        private static string ExtractPackage(string localRepositoryPath, string packageFileName)
+        private string ExtractPackage(string localRepositoryPath, string packageFileName)
         {
             string backupFilePath = localRepositoryPath + packageFileName;
             string backupFolderPath = backupFilePath.Replace(".zip", "") + "\\";
@@ -109,6 +112,7 @@ namespace SnapRepo.Backups
             {
                 Directory.Delete(backupFolderPath, true);
             }
+            _logService.WriteLog($"Extracting Package zip file {packageFileName}.");
             using (ZipFile zip = new ZipFile(backupFilePath))
             {
                 zip.ExtractAll(localRepositoryPath);
@@ -116,15 +120,16 @@ namespace SnapRepo.Backups
             return backupFolderPath;
         }
 
-        private static void RestoreAppData(string localRepositoryPath, string packageFolderName, string appDataZipFile, string appDataFolder, bool createBackup = false)
+        private void RestoreAppData(string localRepositoryPath, string packageFolderName, string appDataZipFile, string appDataFolder, bool renameExistingAppDataFolder = false)
         {
             string appDataZipFilePath = localRepositoryPath + packageFolderName + appDataZipFile;
             bool exists = Directory.Exists(appDataFolder);
-            if (createBackup && exists)
+            if (renameExistingAppDataFolder && exists)
                 Directory.Move(appDataFolder, appDataFolder + "_backup_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
             else
                 Directory.Delete(appDataFolder, true);
             Directory.CreateDirectory(appDataFolder);
+            _logService.WriteLog($"Restoring AppData from zip file {packageFolderName + appDataZipFile} to {appDataFolder}.");
             using (ZipFile zip = new ZipFile(appDataZipFilePath))
             {
                 zip.ExtractAll(appDataFolder);

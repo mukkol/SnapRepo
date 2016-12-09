@@ -7,6 +7,12 @@
 @using Microsoft.WindowsAzure.Storage
 @using Microsoft.WindowsAzure.Storage.Blob
 @{
+    if (Request.Params["action"] == "ping")
+    {
+        ObjectFactory.Container.GetInstance<LogService>().WriteLog("ping");
+        Response.Write("Pong!");
+        return;
+    }
     //It's recommended to use HTTPS with basic authentication
     if (SettingsFactory.ForceHttps && Request.Url.Scheme != "https")
     {
