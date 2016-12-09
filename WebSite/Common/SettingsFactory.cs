@@ -58,6 +58,7 @@ namespace SnapRepo.Common
         public static bool CheckUserGroups => bool.Parse(ConfigurationManager.AppSettings["SnapRepo.CheckUserGroups"] ?? "True");
         public static bool UseBasicAuth => bool.Parse(ConfigurationManager.AppSettings["SnapRepo.UseBasicAuth"] ?? "True");
         public static bool ForceHttps => bool.Parse(ConfigurationManager.AppSettings["SnapRepo.ForceHttps"] ?? "True");
+        public static string AllowedIpAddresses => ConfigurationManager.AppSettings["SnapRepo.AllowedIpAddresses"];
 
 
         public static bool DatabaseExists(string dbConnectionString, string databaseName)

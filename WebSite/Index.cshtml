@@ -7,38 +7,7 @@
 @using Microsoft.WindowsAzure.Storage
 @using Microsoft.WindowsAzure.Storage.Blob
 @{
-    if (Request.Params["action"] == "ping")
-    {
-        ObjectFactory.Container.GetInstance<LogService>().WriteLog("ping");
-        Response.Write("Pong!");
-        return;
-    }
-    //It's recommended to use HTTPS with basic authentication
-    if (SettingsFactory.ForceHttps && Request.Url.Scheme != "https")
-    {
-        Response.Redirect(Request.Url.AbsoluteUri.Replace("http", "https"), true);
-        return;
-    }
-    //Authentication checks before any actions
-    if (SettingsFactory.UseBasicAuth && string.IsNullOrEmpty(Request.Headers["Authorization"]))
-    {
-        //The IIS basic authentication has to be enabled!
-        Response.StatusCode = 401;
-        Response.AddHeader("WWW-Authenticate", "Basic realm=\"SnapRepo\"");
-        Response.End();
-        return;
-    }
-    if (SettingsFactory.CheckUserGroups)
-    {
-        //You can also use your own authentication method.
-        if (!(User.IsInRole("WebAdmins") || User.IsInRole("CmsAdmins") || User.IsInRole("Administrators")))
-        {
-            Response.ClearContent();
-            Response.Write("Access Denied!");
-            Response.StatusCode = (int)HttpStatusCode.Forbidden;
-            return;
-        }
-    }
+    if(!SecurityRulesPass()) { return; }
     OnLoad();
 }
 <!DOCTYPE html>
@@ -521,6 +490,52 @@
     public LogService LogService;
     public string SettingsSerialized => Json.Encode(Settings);
     public string SettingsUrlParam => HttpUtility.UrlEncode(SettingsSerialized);
+
+    public bool SecurityRulesPass()
+    {
+        if (Request.Params["action"] == "ping")
+        {
+            ObjectFactory.Container.GetInstance<LogService>().WriteLog("ping");
+            Response.Write("Pong!");
+            return false;
+        }
+        //It's recommended to limit the access from certain IP addresses only.
+        string userIp = AllowedIpAddressValidator.GetUserHostIpAddress(Request);
+        if (!AllowedIpAddressValidator.IsAllowed(userIp, User))
+        {
+            Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            Response.Write($"Access forbidden from your IP-address ({userIp})!");
+            Response.End();
+            return false;
+        }
+        //It's recommended to use HTTPS with basic authentication
+        if (SettingsFactory.ForceHttps && Request.Url.Scheme != "https")
+        {
+            Response.Redirect(Request.Url.AbsoluteUri.Replace("http", "https"), true);
+            return false;
+        }
+        //Authentication checks before any actions
+        if (SettingsFactory.UseBasicAuth && string.IsNullOrEmpty(Request.Headers["Authorization"]))
+        {
+            //The IIS basic authentication has to be enabled!
+            Response.StatusCode = 401;
+            Response.AddHeader("WWW-Authenticate", "Basic realm=\"SnapRepo\"");
+            Response.End();
+            return false;
+        }
+        if (SettingsFactory.CheckUserGroups)
+        {
+            //You can also use your own authentication method.
+            if (!(User.IsInRole("WebAdmins") || User.IsInRole("CmsAdmins") || User.IsInRole("Administrators")))
+            {
+                Response.ClearContent();
+                Response.Write("Access Denied!");
+                Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                return false;
+            }
+        }
+        return true;
+    }
 
     public void OnLoad()
     {
