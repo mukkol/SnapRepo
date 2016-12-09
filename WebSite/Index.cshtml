@@ -259,7 +259,7 @@
                 <div class="panel-heading">
                     Results <button type="button" class="close" data-target="#result-panel" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
                 </div>
-                <div class="panel-body">@Html.Raw(ActionResult)</div>
+                <div class="panel-body">@Html.Raw(HttpUtility.HtmlDecode(ActionResult))</div>
             </div>
         }
 
@@ -547,7 +547,7 @@
         if (ActionResult != null)
         {
             //Do redirect so F5 (refresh) wont do duplicate the action.
-            Response.Redirect($"{Request.Url.AbsolutePath}?action=result&result={HttpUtility.UrlEncode(ActionResult)}&settings={SettingsUrlParam}");
+            Response.Redirect($"{Request.Url.AbsolutePath}?action=result&result={HttpUtility.UrlEncode(HttpUtility.HtmlEncode(ActionResult))}&settings={SettingsUrlParam}");
         }
         if (Request.Params["action"] == "result")
         {
