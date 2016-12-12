@@ -1,6 +1,7 @@
 <div>
     <h1>SnapRepo - Snapshot Backup Azure Repository</h1>
-
+    <h2>Single click and scheduled backups/restores for SQL Server DB and AppData files.</h2>
+  
     <h3>SnapRepo is for automating backups and restores</h3>
     <p>
         SnapRepo is mainly targeted for handling and automating backups and restoring data of web site projects (like Episerver CMS).
@@ -29,7 +30,8 @@
     </ul>
 
     <h3>Installation</h3>
-    <p>This instruction is to install the SnapRepo as parallel web site which exists in same server or at least in same network.</p>
+    <p>This instruction is to install the SnapRepo as parallel to target web site. 
+      SnapRepo needs to exists in same server or at least in same network to access the data.</p>
     <ol>
         <li>Create IIS site based on the <a href="https://github.com/huilaaja/SnapRepo" target="_blank">GitHub repository</a> sources</li>
         <li>Enable IIS Basic Authentication or implement your own authentication.</li>
@@ -82,6 +84,8 @@
             &lt;add key="SnapRepo.DbSharedBackupFolder" value="\\ServerName\Shared\Folder\"/&gt;</li>
         <li>Disable basic authentication:<br/>
             &lt;add key="SnapRepo.UseBasicAuth" value="False" /&gt;</li>
+        <li>Protect the site with IP-restrictions:<br/>
+            &lt;add key="SnapRepo.AllowedIpAddresses" value="127.0.0.1, 8.8.8.8, 8.8.4.4" /&gt;</li>
         <li>Disable user group checks:<br/>
             &lt;add key="SnapRepo.CheckUserGroups" value="False"/&gt;</li>
         <li>Disable HTTPS-redirect:<br/>
@@ -105,11 +109,6 @@
         <li>Microsoft.SqlServer.SqlClrProvider.dll version=13.0.0.0</li>
         <li>Microsoft.SqlServer.SqlEnum.dll version=13.0.0.0</li>
     </ol>
-    <h4>Two different ways to run it</h4>
-    <ol>
-        <li>Parallel web site <i>(recommended)</i> which will access the project's resources. <i>(More secure and optimal way)</i></li>
-        <li>Inside of target web site which you are targeting the backups. It can be Episerver web site or any other type. <i>(Easier to maintain)</i></li>
-    </ol>
     <h4>Transferring the backups</h4>
     <p>To be able to transferring the backups easily from environment to another, it's required that this tool is installed in all the environments. Only the Azure Blob storage remain the same in all environments.</p>
     <h4>SnapRepo requires lot of privileges</h4>
@@ -117,8 +116,9 @@
         <li>IIS application pool user needs to have write and delete access to Local Repository -folder and AppData-folder.</li>
         <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
     </ul>
-    <h3>Security and limitations</h3>
-    <p>This tool is not meant for basic editors or users nor it's meant to backup hole server. It's meant that only developers, devops and hosting "Super Administrators" have access to this tool.</p>
+    <h3>Security and usage</h3>
     <p>By default this tool uses basic authentication and check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators. But you can easily change authentication and use your own.</p>
     <p>With basic authentication it's recommended to use secured connection with HTTPS-protocol.</p>
+    <p>It's also recommended to use IP-restrictions to restrain access from your network with IIS or implement it with URLRewrite module.</p>
+
 </div>
