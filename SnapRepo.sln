@@ -7,6 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnapRepo.Web", "WebSite\Sna
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{210B690E-BD41-44AE-8366-34121A602EFB}"
 	ProjectSection(SolutionItems) = preProject
+		Screenshots\index.html = Screenshots\index.html
 		README.md = README.md
 	EndProjectSection
 EndProject

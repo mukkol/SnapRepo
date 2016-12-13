@@ -1,0 +1,475 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SnapRepo - Snapshot Backups and Azure Repository</title>
+    <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.7/yeti/bootstrap.min.css">
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <a class="pull-right btn btn-primary btn-xs" href="#">refresh data</a>
+            <h1>
+                SnapRepo <span class="small">- Snapshot Backups and Azure Repository</span>
+                <a href="https://github.com/huilaaja/SnapRepo" target="_blank" ><span class="badge"><i class="glyphicon glyphicon-info-sign"></i> Information</span></a>
+            </h1>
+            <p>Single click and scheduled backups/restores for SQL Server DB and AppData files.</p>
+        </div>
+ 
+
+        <div class="panel panel-default" id="panel1">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <a data-toggle="collapse" data-target="#collapse-settings" href="#">Settings <small>show/hide</small></a>
+                </h3>
+            </div>
+            <div id="collapse-settings" class="panel-body panel-collapse collapse ">
+                <form method="GET" role="form" action="/">
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Local Repository Path<br/><small>IIS application pool user needs to have write and delete access to this folder</small></label>
+                        <div class="col-sm-8"><input type="text" name="localRepositoryPath" value="C:\DATA\Project\SnapRepository\" class="form-control" disabled="disabled" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Azure Repository<br/><small>Blob storage address</small></label>
+                        <div class="col-sm-8"><input type="text" name="azureRepositoryUrl" value="https://project-backups.blob.core.windows.net/" class="form-control" disabled="disabled" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Azure Blob Storage Container Name <br/><small>Folder name for blob storage</small></label>
+                        <div class="col-sm-8"><input type="text" name="containerName" value="SnapRepository" class="form-control" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">AppData Folder Path <br/><small>Path to the folder you want to backup/restore</small></label>
+                        <div class="col-sm-8"><input type="text" name="appDataFolder" value="C:\DATA\AppData" class="form-control" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Database Server Name <br/><small>Target of the backup/restore operations</small></label>
+                        <div class="col-sm-8"><input type="text" name="databaseServerName" value="ProjectSQLServerName" disabled="disabled" class="form-control" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Database Name <br/><small>Target of the backup/restore operations</small></label>
+                        <div class="col-sm-8"><input type="text" name="databaseName" value="ProjectDbName" disabled="disabled" class="form-control" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Database owner <br/><small>Owner will get the same privileges to restored database</small></label>
+                        <div class="col-sm-8"><input type="text" name="databaseOwner" value="ProjectDbUserName" disabled="disabled" class="form-control" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Database Shared Folder Path  (optional) <br/><small>If SQL Server exists in another server, you need to have shared folder to transfer database</small></label>
+                        <div class="col-sm-8"><input type="text" name="dbSharedBackupFolder" value="" placeholder="\\ServerName\Shared\Folder\Path\" class="form-control" /></div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">Site Name (optional) <br/><small>Target web site which will be recycled after restore</small></label>
+                        <div class="col-sm-8">
+                            <select name="iisSiteName" class="form-control">
+                                <option value=""  >-----</option>
+                                <option value="ProjectSite1">ProjectSite1</option>
+                                <option value="ProjectSite" selected >ProjectSite</option>
+                                <option value="ProjectSite2">ProjectSite2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group form-group-sm row">
+                        <label for="" class="col-sm-4">&nbsp;</label>
+                        <div class="col-sm-8"><input type="submit" value="Activate" class="btn btn-primary" /></div>
+                    </div>
+                    <input type="hidden" name="settings" value="" />
+                    <input type="hidden" name="action" value="setSettings" />
+                    
+                </form>
+            </div>
+        </div>
+        
+        <div id="result-panel" class="panel panel-primary">
+            <div class="panel-heading">
+                Results <button type="button" class="close" data-target="#result-panel" data-dismiss="alert"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="panel-body">Action Excuted and some description!</div>
+        </div>
+
+    <h2>Azure Backup Repository</h2>
+
+
+    <table class="table table-condensed table-hover">
+        <thead>
+            <tr>
+                    <td>Name</td>
+                    <td>Size</td>
+                    <td>LastModified</td>
+                    <td>Download</td>
+            </tr>
+        </thead>
+        <tbody>
+                <tr>
+                        <td>2016-12-13_03-40-22_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3627,69 MB</td>
+                        <td>13.12.2016 1:51:25 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-12_03-40-34_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3627,2 MB</td>
+                        <td>12.12.2016 1:51:46 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-12_02-41-18_weekly-backup_PROJECT-PROD_package.zip</td>
+                        <td>3627,2 MB</td>
+                        <td>12.12.2016 0:54:10 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-11_03-40-15_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3627 MB</td>
+                        <td>11.12.2016 1:51:33 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-10_03-40-54_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3629,74 MB</td>
+                        <td>10.12.2016 1:52:25 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-09_03-40-31_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3624,22 MB</td>
+                        <td>9.12.2016 1:52:04 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-08_03-40-13_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3615,48 MB</td>
+                        <td>8.12.2016 1:51:37 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-07_03-39-38_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3608,59 MB</td>
+                        <td>7.12.2016 1:49:54 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-06_03-39-38_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3608,78 MB</td>
+                        <td>6.12.2016 1:50:37 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-12-06_02-40-32_weekly-backup_PROJECT-PROD_package.zip</td>
+                        <td>3608,78 MB</td>
+                        <td>6.12.2016 0:52:56 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-11-27_11-49-51_weekly-backup_PROJECT-PROD_package.zip</td>
+                        <td>3590,41 MB</td>
+                        <td>27.11.2016 11:32:34 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+                <tr>
+                        <td>2016-10-14_17-01-26_predeployment_PROJECT-PROD_package.zip</td>
+                        <td>3231,33 MB</td>
+                        <td>14.10.2016 14:10:13 +00:00</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Download to Local</a></td>
+                </tr>
+        </tbody>
+    </table>
+
+
+            <div class="panel panel-default" id="panel-backupAzure">
+                <div class="panel-heading">
+                    <h2 class="panel-title">
+                        <a data-toggle="collapse" data-target="#collapse-backupAzure" href="#panel-backupAzure">
+                            Create Backup To Azure Repository <small>show/hide</small>
+                        </a>
+                    </h2>
+                </div>
+                <div id="collapse-backupAzure" class="panel-body panel-collapse collapse">
+                    <form method="GET" role="form" action="/" class="form-horizontal">
+                        <input type="hidden" name="settings" value="" />
+                        <input type="hidden" name="action" value="backupAzure" />
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Short Backup Name <br />(optional, no whitespace)</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="backupInfix" value="" placeholder="daily" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <input type="submit" value="BACKUP To Azure" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <h2>Local Backup Repository</h2>
+    <table class="table table-condensed table-hover">
+        <thead>
+            <tr>
+                    <td>Name</td>
+                    <td>Size</td>
+                    <td>CreationTime</td>
+                    <td>Upload</td>
+                    <td>Restore</td>
+                    <td>Delete</td>
+            </tr>
+        </thead>
+        <tbody>
+                <tr>
+                        <td>2016-12-06_01-39-34_weekly-local-backup_PROJECT-PROD_package.zip</td>
+                        <td>3608,78 MB</td>
+                        <td>6.12.2016 1:39:34</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Upload to Azure</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to RESTORE this item?');" class="btn btn-info btn-xs">Restore</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>2016-11-30_11-03-47_daily-backup_PROJECT-PROD_package.zip</td>
+                        <td>3596,57 MB</td>
+                        <td>30.11.2016 11:03:47</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Upload to Azure</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to RESTORE this item?');" class="btn btn-info btn-xs">Restore</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>2016-11-15_02-34-33_daily-backup-local_PROJECT-PROD_package.zip</td>
+                        <td>3495,62 MB</td>
+                        <td>15.11.2016 2:34:33</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Upload to Azure</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to RESTORE this item?');" class="btn btn-info btn-xs">Restore</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>2016-10-27_02-34-23_daily-backup-local_PROJECT-PROD_package.zip</td>
+                        <td>3333,18 MB</td>
+                        <td>27.10.2016 2:34:23</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Upload to Azure</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to RESTORE this item?');" class="btn btn-info btn-xs">Restore</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>2016-10-22_02-34-07_daily-backup-local_PROJECT-PROD_package.zip</td>
+                        <td>3261,19 MB</td>
+                        <td>22.10.2016 2:34:07</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Upload to Azure</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to RESTORE this item?');" class="btn btn-info btn-xs">Restore</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>2016-10-21_10-36-59_before-production-update_PROJECT-PROD_package.zip</td>
+                        <td>3260,55 MB</td>
+                        <td>21.10.2016 10:36:59</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Upload to Azure</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to RESTORE this item?');" class="btn btn-info btn-xs">Restore</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>2016-10-18_02-34-20_daily-backup-local_PROJECT-PROD_package.zip</td>
+                        <td>3234,33 MB</td>
+                        <td>18.10.2016 2:34:20</td>
+                        <td><a href="?action=" class="btn btn-default btn-xs">Upload to Azure</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to RESTORE this item?');" class="btn btn-info btn-xs">Restore</a></td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+        </tbody>
+    </table>
+            <div class="panel panel-default" id="panel-backupLocal">
+                <div class="panel-heading">
+                    <h2 class="panel-title">
+                        <a data-toggle="collapse" data-target="#collapse-backupLocal" href="#panel-backupLocal">
+                            Create Backup To Local Repository <small>show/hide</small>
+                        </a>
+                    </h2>
+                </div>
+                <div id="collapse-backupLocal" class="panel-body panel-collapse collapse">
+                    <form method="GET" role="form" action="/" class="form-horizontal">
+                        <input type="hidden" name="settings" value="" />
+                        <input type="hidden" name="action" value="backupLocal" />
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Short Backup Name <br />(optional, no whitespace)</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="backupInfix" value="" placeholder="daily" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <input type="submit" value="BACKUP To Local" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <a class="pull-right btn btn-primary btn-xs" href="?action=">read logs</a>
+            <h2>Local Scheduled Jobs</h2>
+    <table class="table table-condensed table-hover">
+        <thead>
+            <tr>
+                    <td>Name</td>
+                    <td>Interval</td>
+                    <td>AtTime</td>
+                    <td>NextRun</td>
+                    <td>Disabled</td>
+                    <td>Query</td>
+                    <td>Delete</td>
+            </tr>
+        </thead>
+        <tbody>
+                <tr>
+                        <td>Weekly Azure Backup Job</td>
+                        <td>7</td>
+                        <td>02:30</td>
+                        <td>20.12.2016 2:30:00</td>
+                        <td>False</td>
+                        <td>?action=backupAzure&backupInfix=weekly-backup</td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>Cleaning Weekly Azure Backups Job</td>
+                        <td>1</td>
+                        <td>01:59</td>
+                        <td>14.12.2016 1:59:00</td>
+                        <td>False</td>
+                        <td>?action=cleanAzure&filterInfix=_weekly-backup_&minDays=30</td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>Cleaning Daily Azure Backups Job</td>
+                        <td>1</td>
+                        <td>02:25</td>
+                        <td>14.12.2016 2:25:00</td>
+                        <td>False</td>
+                        <td>?action=cleanAzure&filterInfix=_daily-backup_&minDays=7</td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+                <tr>
+                        <td>Daily Azure Backup Job</td>
+                        <td>1</td>
+                        <td>03:30</td>
+                        <td>14.12.2016 3:30:00</td>
+                        <td>False</td>
+                        <td>?action=backupAzure&backupInfix=daily-backup</td>
+                        <td><a href="?action=" onclick="return confirm('Are you sure you want to DELETE this item?');" class="btn btn-danger btn-xs">Delete</a></td>
+                </tr>
+        </tbody>
+    </table>
+            <div class="panel panel-default" id="panel-addBackupJob">
+                <div class="panel-heading">
+                    <h2 class="panel-title">
+                        <a data-toggle="collapse" data-target="#collapse-addBackupJob" href="#panel-addBackupJob">
+                            Create Scheduled Job <small>show/hide</small>
+                        </a>
+                    </h2>
+                </div>
+                <div id="collapse-addBackupJob" class="panel-body panel-collapse collapse">
+
+                    <form method="GET" role="form" action="/" class="form-horizontal">
+                        <input type="hidden" name="settings" value="" />
+                        <input type="hidden" name="action" value="addBackupJob" />
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Job Name <small>(unique)</small></label>
+                            <div class="col-sm-9">
+                                <input type="text" name="jobName" value="Daily Azure Backup Job" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Interval (Days)</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="interval" value="1" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group form-inline">
+                            <label class="col-sm-3 control-label" for="">Starting Time</label>
+                            <div class="col-sm-9">
+                                <label class="control-label" for="">Hours</label>
+                                <input type="text" name="atHours" value="23" class="form-control" />
+                                <label class="control-label" for="">Minutes</label>
+                                <input type="text" name="atMins" value="59" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Query Parameters<br/><small>(Scheduler will call this page with these parameters)</small></label>
+                            <div class="col-sm-9">
+                                <input type="text" name="queryParams" value="?action=" class="form-control"/>
+                                <small>
+                                    <b>other examples:</b><br/>
+                                    Cleaning Daily Azure Backups Job: <b>?action=cleanAzure&filterInfix=_daily-backup_&minDays=7</b><br/>
+                                    Weekly Azure Backup Job: <b>?action=backupAzure&backupInfix=weekly-backup</b><br/>
+                                    Cleaning Weekly Azure Backups Job: <b>?action=cleanAzure&filterInfix=_weekly-backup_&minDays=30</b><br/>
+                                    Weekly Local Backup Job: <b>?action=backupLocal&backupInfix=weekly-local-backup</b><br/>
+                                </small>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <input type="submit" value="Create Scheduled Job" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+            <hr/>
+            <div class="panel panel-default" id="panel-cleanAzure">
+                <div class="panel-heading">
+                    <h2 class="panel-title">
+                        <a data-toggle="collapse" data-target="#collapse-cleanAzure" href="#panel-cleanAzure">
+                            Clean Old Backups From Azure <small>show/hide</small>
+                        </a>
+                    </h2>
+                </div>
+                <div id="collapse-cleanAzure" class="panel-body panel-collapse collapse">
+
+                    <form method="GET" role="form" action="/" class="form-horizontal">
+                        <input type="hidden" name="settings" value="" />
+                        <input type="hidden" name="action" value="cleanAzure" />
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Filter by backup name</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="filterInfix" value="_daily_" placeholder="_daily_" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="">Minimum number of days old</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="minDays" value="7" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <label class="checkbox-inline" for="simulate">
+                                    <input type="checkbox" id="simulate" name="simulate"  value="True" />
+                                    Simulate (will not delete anything)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-3"></div>
+                            <div class="col-sm-9">
+                                <input type="submit" value="CLEAN Azure" class="btn btn-danger" onclick="return confirm('Are you sure you want to CLEAN Azure backups?');" />
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+            <hr />
+    </div>
+
+
+
+</body>
+</html>
+
+
