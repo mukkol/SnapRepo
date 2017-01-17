@@ -16,6 +16,11 @@
       <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-environments.png" width="500"/>
     </a>
   </p>
+  <p>
+    <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-installation.png">
+      <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-installation.png" width="500"/>
+    </a>
+  </p>
   
   <h3>SnapRepo is designed for following use cases and purposes</h3>
   <ul>
