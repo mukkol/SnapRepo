@@ -6,9 +6,15 @@
     <p>
         SnapRepo is mainly targeted for handling and automating backups and restoring data of web site projects (like Episerver CMS).
         It's backing up data to Azure Blob storage from virtual machines or local server and restoring it vice versa.
-        Backup data includes SQL Server Database and AppData folders and it's extendable for other storages.
+        Backup data includes SQL Server Database and AppData folders.
     </p>
-
+  
+    <p>
+      <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-environments.png">
+        <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-environments.png" width="400"/>
+      </a>
+    </p>
+  
     <h3>SnapRepo is designed for following use cases and purposes</h3>
     <ul>
         <li><b>Managing backup archives</b>
@@ -26,9 +32,19 @@
         </li>
         <li><b>Backups before production deployments</b> or even automate the backups in deployments</li>
         <li><b>Works on my machine -problems</b> and easing the problem solving of production environment</li>
-        <li>Improving the data integrity by handling full backup packages. Packages are meant to create and restored with the same tools.</li>
+        <li>Improving the data integrity by handling full backup packages. Packages are meant to create and restored with the same application.</li>
     </ul>
 
+    <h3>Usage</h3>
+    <p>
+      <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-fullsize.png">
+        <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-fullsize.png" width="400" />
+      </a>
+    </p>
+    <p>
+      <a href="https://htmlpreview.github.io/?https://github.com/huilaaja/SnapRepo/blob/master/Screenshots/html-demo.html">HTML-demo of the application.</a> It contains only visual side of the application.
+    </p>
+  
     <h3>Installation</h3>
     <p>This instruction is to install the SnapRepo as parallel to target web site. 
       SnapRepo needs to exists in same server or at least in same network to access the data.</p>
@@ -61,8 +77,8 @@
                     <ol>
                         <li>application pool <b>Start Mode = "AlwaysRunning"</b></li>
                         <li>from IIS site Advance Settings <b>Preload Enabled = True</b></li>
+                        <li>or set some sort of pinging scheduler to the site. Example <a href="http://uptimerobot.com/" target="_blank">uptimerobot.com/</a></li>
                     </ol>
-                    <a href="https://weblog.west-wind.com/posts/2013/oct/02/use-iis-application-initialization-for-keeping-aspnet-apps-alive" target="_blank">Here you can find further information on those settings.</a>
                 </li>
             </ul>
         </li>
@@ -92,6 +108,8 @@
             &lt;add key="SnapRepo.ForceHttps" value="False"/&gt;</li>
     </ul>
 
+    <p><img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-settings.png" /></p>
+
     <h3>Requirements and inside information</h3>
     <p>Build with .NET Framework 4.6.1.</p>
     <h4>Depends on 4 NuGet Packages</h4>
@@ -101,23 +119,24 @@
         <li>FluentScheduler version="5.0.0"</li>
         <li>Microsoft.Web.Administration version="7.0.0.0"</li>
     </ol>
-    <h4>Require SQL Server SMO DLLs <small>(these are included in project)</small></h4>
+    <!--<h4>Require SQL Server SMO DLLs <small>(these are included in project)</small></h4>
     <ol>
         <li>Microsoft.SqlServer.ConnectionInfo.dll version=13.0.0.0</li>
         <li>Microsoft.SqlServer.Management.Sdk.Sfc.dll version=13.0.0.0</li>
         <li>Microsoft.SqlServer.Smo.dll version=13.0.0.0</li>
         <li>Microsoft.SqlServer.SqlClrProvider.dll version=13.0.0.0</li>
         <li>Microsoft.SqlServer.SqlEnum.dll version=13.0.0.0</li>
-    </ol>
+    </ol>-->
     <h4>Transferring the backups</h4>
-    <p>To be able to transferring the backups easily from environment to another, it's required that this tool is installed in all the environments. Only the Azure Blob storage remain the same in all environments.</p>
+    <p>To be able to transferring the backups easily from environment to another, it's required that SnapRepo is installed in multiple the environments. Only the Azure Blob storage remain the same in all environments.</p>
     <h4>SnapRepo requires lot of privileges</h4>
+    <p>You may use SnapRepo without restore function and then only read priviledges are sufficient.</p>
     <ul>
         <li>IIS application pool user needs to have write and delete access to Local Repository -folder and AppData-folder.</li>
         <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
     </ul>
     <h3>Security and usage</h3>
-    <p>By default this tool uses basic authentication and check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators. But you can easily change authentication and use your own.</p>
+    <p>By default this application uses basic authentication and check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators. But you can easily change authentication and use your own.</p>
     <p>With basic authentication it's recommended to use secured connection with HTTPS-protocol.</p>
     <p>It's also recommended to use IP-restrictions to restrain access from your network with IIS or implement it with URLRewrite module.</p>
 
