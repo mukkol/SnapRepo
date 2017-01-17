@@ -11,7 +11,7 @@
   
     <p>
       <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-environments.png">
-        <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-environments.png" width="400"/>
+        <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-environments.png" width="500"/>
       </a>
     </p>
   
@@ -38,7 +38,7 @@
     <h3>Usage</h3>
     <p>
       <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-fullsize.png">
-        <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-fullsize.png" width="400" />
+        <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-fullsize.png" width="500" />
       </a>
     </p>
     <p>
@@ -77,7 +77,7 @@
                     <ol>
                         <li>application pool <b>Start Mode = "AlwaysRunning"</b></li>
                         <li>from IIS site Advance Settings <b>Preload Enabled = True</b></li>
-                        <li>or set some sort of pinging scheduler to the site. Example <a href="http://uptimerobot.com/" target="_blank">uptimerobot.com/</a></li>
+                        <li>or some sort of scheduled pinger (Example <a href="http://uptimerobot.com/" target="_blank">uptimerobot.com</a>)</li>
                     </ol>
                 </li>
             </ul>
@@ -108,7 +108,7 @@
             &lt;add key="SnapRepo.ForceHttps" value="False"/&gt;</li>
     </ul>
 
-    <p><img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-settings.png" /></p>
+    <p>Same settings are in application:<br/><img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-settings.png" width="500" /></p>
 
     <h3>Requirements and inside information</h3>
     <p>Build with .NET Framework 4.6.1.</p>
@@ -130,7 +130,7 @@
     <h4>Transferring the backups</h4>
     <p>To be able to transferring the backups easily from environment to another, it's required that SnapRepo is installed in multiple the environments. Only the Azure Blob storage remain the same in all environments.</p>
     <h4>SnapRepo requires lot of privileges</h4>
-    <p>You may use SnapRepo without restore function and then only read priviledges are sufficient.</p>
+    <p>You may use SnapRepo without restore function so then read priviledges are sufficient.</p>
     <ul>
         <li>IIS application pool user needs to have write and delete access to Local Repository -folder and AppData-folder.</li>
         <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
