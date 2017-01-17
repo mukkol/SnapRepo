@@ -131,17 +131,19 @@
   </ol>-->
 
   <details>
-    <summary>
-      <h4>Transferring the backups</h4>
-    </summary>
+    <summary>Transferring the backups</summary>
     <p>To be able to transferring the backups easily from environment to another, it's required that SnapRepo is installed in multiple the environments. Only the Azure Blob storage remain the same in all environments.</p>
   </details>
-  <h4>SnapRepo requires lot of privileges</h4>
-  <p>You may use SnapRepo without restore function so then read priviledges are sufficient.</p>
-  <ul>
+
+  <details>
+    <summary>SnapRepo requires lot of privileges</summary>
+    <p>You may use SnapRepo without restore function so then read priviledges are sufficient.</p>
+    <ul>
       <li>IIS application pool user needs to have write and delete access to Local Repository -folder and AppData-folder.</li>
       <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
-  </ul>
+    </ul>
+  </details>
+  
   <h3>Security and usage</h3>
   <p>By default this application uses basic authentication and check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators. But you can easily change authentication and use your own.</p>
   <p>With basic authentication it's recommended to use secured connection with HTTPS-protocol.</p>
