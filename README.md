@@ -48,9 +48,8 @@
   </p>
 
   <details>
-    <summary>
-      <b>Installation</b>
-    </summary>
+    <summary><b>Installation</b></summary>
+    <p>&nbsp;</p>
     <p>This instruction is to install the SnapRepo as parallel to target web site. 
       SnapRepo needs to exists in same server or at least in same network to access the data.</p>
     <ol>
@@ -94,9 +93,8 @@
   <hr/>
   
   <details>
-    <summary>
-      <b>Configuration options</b>
-    </summary>
+    <summary><b>Configuration options</b></summary>
+    <p>&nbsp;</p>
     <p>From web.config &lt;appSettings&gt; you can change the default configuration of following settings:</p>
     <ul>
         <li>Local repository path:<br/>
@@ -124,9 +122,8 @@
   <hr/>
 
   <details>
-    <summary>
-      <b>Requirements and Nugets</b>
-    </summary>
+    <summary><b>Requirements and Nugets</b></summary>
+    <p>&nbsp;</p>
     <p>Build with .NET Framework 4.6.1.</p>
     <h4>Depends on 4 NuGet Packages</h4>
     <ol>
@@ -149,6 +146,7 @@
   
   <details>
     <summary><b>Access rights</b></summary>
+    <p>&nbsp;</p>
     <p>You may use SnapRepo without restore function so then read access to the db and appdata folder is sufficient.</p>
     <p>Restorind data requires a lot more priviledges:</p>
     <ul>
@@ -160,9 +158,7 @@
   <hr/>
   
   <details>
-    <summary>
-      <b>Security and usage</b>
-    </summary>
+    <summary><b>Security and usage</b></summary>
     <p>&nbsp;</p>
     <p>By default this application uses basic authentication and check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators. But you can easily change authentication and use your own.</p>
     <p>With basic authentication it's recommended to use secured connection with HTTPS-protocol.</p>
