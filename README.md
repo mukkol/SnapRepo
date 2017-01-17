@@ -20,6 +20,7 @@
     <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-installation.png">
       <img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/snaprepo-installation.png" width="500"/>
     </a>
+    <br/><i>Snaprepo website can be installed in the same server (with target website) or another server in same network.</i>
   </p>
   
   <h3>SnapRepo is designed for following use cases and purposes</h3>
