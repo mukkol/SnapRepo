@@ -129,8 +129,13 @@
       <li>Microsoft.SqlServer.SqlClrProvider.dll version=13.0.0.0</li>
       <li>Microsoft.SqlServer.SqlEnum.dll version=13.0.0.0</li>
   </ol>-->
-  <h4>Transferring the backups</h4>
-  <p>To be able to transferring the backups easily from environment to another, it's required that SnapRepo is installed in multiple the environments. Only the Azure Blob storage remain the same in all environments.</p>
+
+  <details>
+    <summary>
+      <h4>Transferring the backups</h4>
+    </summary>
+    <p>To be able to transferring the backups easily from environment to another, it's required that SnapRepo is installed in multiple the environments. Only the Azure Blob storage remain the same in all environments.</p>
+  </details>
   <h4>SnapRepo requires lot of privileges</h4>
   <p>You may use SnapRepo without restore function so then read priviledges are sufficient.</p>
   <ul>
@@ -143,3 +148,5 @@
   <p>It's also recommended to use IP-restrictions to restrain access from your network with IIS or implement it with URLRewrite module.</p>
 
 </div>
+
+  
