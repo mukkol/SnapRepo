@@ -51,7 +51,7 @@
   <p>This instruction is to install the SnapRepo as parallel to target web site. 
     SnapRepo needs to exists in same server or at least in same network to access the data.</p>
   <ol>
-      <li>Create IIS site based on the <a href="https://github.com/huilaaja/SnapRepo" target="_blank">GitHub repository</a> sources</li>
+      <li>Create IIS site from the <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/DeployPackage/SnapRepo.zip" target="_blank">deployment package zip-file</a> or from the <a href="https://github.com/huilaaja/SnapRepo" target="_blank">GitHub repository</a> sources</li>
       <li>Enable IIS Basic Authentication or implement your own authentication.</li>
       <li>Create Azure Blob Storage (type: private)</li>
       <li>
