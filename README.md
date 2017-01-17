@@ -87,56 +87,62 @@
       <li>Start using it!</li>
   </ol>
 
-  <h3>Configuration options</h3>
-  <p>From web.config &lt;appSettings&gt; you can change the default configuration of following settings:</p>
-  <ul>
-      <li>Local repository path:<br/>
-          &lt;add key="SnapRepo.LocalRepositoryPath" value="C:\Sites\ExampleSite\SnapRepository\"/&gt;</li>
-      <li>AppData folder path:<br/>
-          &lt;add key="SnapRepo.AppDataFolder" value="C:\Sites\ExampleSite\AppData" /&gt;</li>
-      <li>IIS site name:<br/>
-          &lt;add key="SnapRepo.IisSiteName" value="ExampleSite" /&gt;</li>
-      <li>Blob storage container name:<br/>
-          &lt;add key="SnapRepo.ContainerName" value="CustomBlobStorageContainerName"/&gt;</li>
-      <li>Database shared folder path (for transferring database backup):<br/>
-          &lt;add key="SnapRepo.DbSharedBackupFolder" value="\\ServerName\Shared\Folder\"/&gt;</li>
-      <li>Disable basic authentication:<br/>
-          &lt;add key="SnapRepo.UseBasicAuth" value="False" /&gt;</li>
-      <li>Protect the site with IP-restrictions:<br/>
-          &lt;add key="SnapRepo.AllowedIpAddresses" value="127.0.0.1, 8.8.8.8, 8.8.4.4" /&gt;</li>
-      <li>Disable user group checks:<br/>
-          &lt;add key="SnapRepo.CheckUserGroups" value="False"/&gt;</li>
-      <li>Disable HTTPS-redirect:<br/>
-          &lt;add key="SnapRepo.ForceHttps" value="False"/&gt;</li>
-  </ul>
+  <details>
+    <summary>
+      <b>Configuration options</b>
+    </summary>
+    <p>From web.config &lt;appSettings&gt; you can change the default configuration of following settings:</p>
+    <ul>
+        <li>Local repository path:<br/>
+            &lt;add key="SnapRepo.LocalRepositoryPath" value="C:\Sites\ExampleSite\SnapRepository\"/&gt;</li>
+        <li>AppData folder path:<br/>
+            &lt;add key="SnapRepo.AppDataFolder" value="C:\Sites\ExampleSite\AppData" /&gt;</li>
+        <li>IIS site name:<br/>
+            &lt;add key="SnapRepo.IisSiteName" value="ExampleSite" /&gt;</li>
+        <li>Blob storage container name:<br/>
+            &lt;add key="SnapRepo.ContainerName" value="CustomBlobStorageContainerName"/&gt;</li>
+        <li>Database shared folder path (for transferring database backup):<br/>
+            &lt;add key="SnapRepo.DbSharedBackupFolder" value="\\ServerName\Shared\Folder\"/&gt;</li>
+        <li>Disable basic authentication:<br/>
+            &lt;add key="SnapRepo.UseBasicAuth" value="False" /&gt;</li>
+        <li>Protect the site with IP-restrictions:<br/>
+            &lt;add key="SnapRepo.AllowedIpAddresses" value="127.0.0.1, 8.8.8.8, 8.8.4.4" /&gt;</li>
+        <li>Disable user group checks:<br/>
+            &lt;add key="SnapRepo.CheckUserGroups" value="False"/&gt;</li>
+        <li>Disable HTTPS-redirect:<br/>
+            &lt;add key="SnapRepo.ForceHttps" value="False"/&gt;</li>
+    </ul>
+    <p>Same settings are in application:<br/><img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-settings.png" width="500" /></p>
+  </details>
+  
+  <hr/>
 
-  <p>Same settings are in application:<br/><img src="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/Screenshots/screencapture-settings.png" width="500" /></p>
-
-  <h3>Requirements and inside information</h3>
-  <p>Build with .NET Framework 4.6.1.</p>
-  <h4>Depends on 4 NuGet Packages</h4>
-  <ol>
+  <details>
+    <summary>
+      <b>Requirements and Nugets</b>
+    </summary>
+    <p>Build with .NET Framework 4.6.1.</p>
+    <h4>Depends on 4 NuGet Packages</h4>
+    <ol>
       <li>WindowsAzure.Storage version="7.2.1"</li>
       <li>DotNetZip version="1.9.1.8"</li>
       <li>FluentScheduler version="5.0.0"</li>
       <li>Microsoft.Web.Administration version="7.0.0.0"</li>
-  </ol>
-  <!--<h4>Require SQL Server SMO DLLs <small>(these are included in project)</small></h4>
-  <ol>
-      <li>Microsoft.SqlServer.ConnectionInfo.dll version=13.0.0.0</li>
-      <li>Microsoft.SqlServer.Management.Sdk.Sfc.dll version=13.0.0.0</li>
-      <li>Microsoft.SqlServer.Smo.dll version=13.0.0.0</li>
-      <li>Microsoft.SqlServer.SqlClrProvider.dll version=13.0.0.0</li>
-      <li>Microsoft.SqlServer.SqlEnum.dll version=13.0.0.0</li>
-  </ol>-->
-
-  <details>
-    <summary>Transferring the backups</summary>
-    <p>To be able to transferring the backups easily from environment to another, it's required that SnapRepo is installed in multiple the environments. Only the Azure Blob storage remain the same in all environments.</p>
+    </ol>
+    <!--<h4>Require SQL Server SMO DLLs <small>(these are included in project)</small></h4>
+    <ol>
+        <li>Microsoft.SqlServer.ConnectionInfo.dll version=13.0.0.0</li>
+        <li>Microsoft.SqlServer.Management.Sdk.Sfc.dll version=13.0.0.0</li>
+        <li>Microsoft.SqlServer.Smo.dll version=13.0.0.0</li>
+        <li>Microsoft.SqlServer.SqlClrProvider.dll version=13.0.0.0</li>
+        <li>Microsoft.SqlServer.SqlEnum.dll version=13.0.0.0</li>
+    </ol>-->
   </details>
-
+  
+  <hr/>
+  
   <details>
-    <summary>SnapRepo requires lot of privileges</summary>
+    <summary><b>SnapRepo requires lot of privileges</b></summary>
     <p>You may use SnapRepo without restore function so then read priviledges are sufficient.</p>
     <ul>
       <li>IIS application pool user needs to have write and delete access to Local Repository -folder and AppData-folder.</li>
@@ -144,10 +150,17 @@
     </ul>
   </details>
   
-  <h3>Security and usage</h3>
-  <p>By default this application uses basic authentication and check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators. But you can easily change authentication and use your own.</p>
-  <p>With basic authentication it's recommended to use secured connection with HTTPS-protocol.</p>
-  <p>It's also recommended to use IP-restrictions to restrain access from your network with IIS or implement it with URLRewrite module.</p>
+  <hr/>
+  
+  <details>
+    <summary>
+      <b>Security and usage</b>
+    </summary>
+    <p>By default this application uses basic authentication and check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators. But you can easily change authentication and use your own.</p>
+    <p>With basic authentication it's recommended to use secured connection with HTTPS-protocol.</p>
+    <p>It's also recommended to use IP-restrictions to restrain access from your network with IIS or implement it with URLRewrite module.</p>
+  </details>
+
 
 </div>
 
