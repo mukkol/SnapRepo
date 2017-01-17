@@ -46,47 +46,53 @@
   <p>
     <a href="https://htmlpreview.github.io/?https://github.com/huilaaja/SnapRepo/blob/master/Screenshots/html-demo.html">HTML-demo of the application.</a> It contains only visual side of the application.
   </p>
-  
-  <h3>Installation</h3>
-  <p>This instruction is to install the SnapRepo as parallel to target web site. 
-    SnapRepo needs to exists in same server or at least in same network to access the data.</p>
-  <ol>
-      <li>Create IIS site from the <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/DeployPackage/SnapRepo.zip" target="_blank">deployment package zip-file</a> or from the <a href="https://github.com/huilaaja/SnapRepo" target="_blank">GitHub repository</a> sources</li>
-      <li>Enable IIS Basic Authentication or implement your own authentication.</li>
-      <li>Create Azure Blob Storage (type: private)</li>
-      <li>
-          Set up 2 connection strings:
-          <ol>
-              <li>
-                  <b>AzureBackupBlobStorage</b><br/>
-                  Connections string to Azure Blob Storage. <a href="https://azure.microsoft.com/en-us/documentation/articles/storage-configure-connection-string/" target="_blank">Read more</a><br/>
-                  Example: &lt;add name="AzureBackupBlobStorage" connectionString="DefaultEndpointsProtocol=[http|https];AccountName=accountName;AccountKey=accountKey" /&gt;
-              </li>
-              <li>
-                  <b>SnapRepo</b><br/>
-                  Connection string to SQL Server (with high user privileges)<br/>
-                  Example: &lt;add name="SnapRepo" connectionString="Data Source=(local);Initial Catalog=DatabaseName;User ID=sa;Password=sa_password;Connection Timeout=1800;Integrated Security=False;MultipleActiveResultSets=True" providerName="System.Data.SqlClient" /&gt;
-              </li>
-          </ol>
-      </li>
-      <li>Make sure that following settings are correct
-          <ul>
-              <li>Make sure your IIS application user has access to required resources (folders) and SQL Server user (in connection string) has necessary privileges.</li>
-              <li>SnapRepo needs to have long timeouts for requests and db connections. By default this site has 60min (3600secs) timeouts and SQL Connection timeout is set to 30 minutes (1800secs).</li>
-              <li>
-                  Scheduled services required that the IIS site needs to be alive all the time.
-                  So you need to set:
-                  <ol>
-                      <li>application pool <b>Start Mode = "AlwaysRunning"</b></li>
-                      <li>from IIS site Advance Settings <b>Preload Enabled = True</b></li>
-                      <li>or some sort of scheduled pinger (Example <a href="http://uptimerobot.com/" target="_blank">uptimerobot.com</a>)</li>
-                  </ol>
-              </li>
-          </ul>
-      </li>
-      <li>Start using it!</li>
-  </ol>
 
+  <details>
+    <summary>
+      <b>Installation</b>
+    </summary>
+    <p>This instruction is to install the SnapRepo as parallel to target web site. 
+      SnapRepo needs to exists in same server or at least in same network to access the data.</p>
+    <ol>
+        <li>Create IIS site from the <a href="https://raw.githubusercontent.com/huilaaja/SnapRepo/master/DeployPackage/SnapRepo.zip" target="_blank">deployment package zip-file</a> or from the <a href="https://github.com/huilaaja/SnapRepo" target="_blank">GitHub repository</a> sources</li>
+        <li>Enable IIS Basic Authentication or implement your own authentication.</li>
+        <li>Create Azure Blob Storage (type: private)</li>
+        <li>
+            Set up 2 connection strings:
+            <ol>
+                <li>
+                    <b>AzureBackupBlobStorage</b><br/>
+                    Connections string to Azure Blob Storage. <a href="https://azure.microsoft.com/en-us/documentation/articles/storage-configure-connection-string/" target="_blank">Read more</a><br/>
+                    Example: &lt;add name="AzureBackupBlobStorage" connectionString="DefaultEndpointsProtocol=[http|https];AccountName=accountName;AccountKey=accountKey" /&gt;
+                </li>
+                <li>
+                    <b>SnapRepo</b><br/>
+                    Connection string to SQL Server (with high user privileges)<br/>
+                    Example: &lt;add name="SnapRepo" connectionString="Data Source=(local);Initial Catalog=DatabaseName;User ID=sa;Password=sa_password;Connection Timeout=1800;Integrated Security=False;MultipleActiveResultSets=True" providerName="System.Data.SqlClient" /&gt;
+                </li>
+            </ol>
+        </li>
+        <li>Make sure that following settings are correct
+            <ul>
+                <li>Make sure your IIS application user has access to required resources (folders) and SQL Server user (in connection string) has necessary privileges.</li>
+                <li>SnapRepo needs to have long timeouts for requests and db connections. By default this site has 60min (3600secs) timeouts and SQL Connection timeout is set to 30 minutes (1800secs).</li>
+                <li>
+                    Scheduled services required that the IIS site needs to be alive all the time.
+                    So you need to set:
+                    <ol>
+                        <li>application pool <b>Start Mode = "AlwaysRunning"</b></li>
+                        <li>from IIS site Advance Settings <b>Preload Enabled = True</b></li>
+                        <li>or some sort of scheduled pinger (Example <a href="http://uptimerobot.com/" target="_blank">uptimerobot.com</a>)</li>
+                    </ol>
+                </li>
+            </ul>
+        </li>
+        <li>Start using it!</li>
+    </ol>
+  </details>
+
+  <hr/>
+  
   <details>
     <summary>
       <b>Configuration options</b>
@@ -142,8 +148,9 @@
   <hr/>
   
   <details>
-    <summary><b>SnapRepo requires lot of privileges</b></summary>
-    <p>You may use SnapRepo without restore function so then read priviledges are sufficient.</p>
+    <summary><b>Access rights</b></summary>
+    <p>You may use SnapRepo without restore function so then read access to the db and appdata folder is sufficient.</p>
+    <p>Restorind data requires a lot more priviledges:</p>
     <ul>
       <li>IIS application pool user needs to have write and delete access to Local Repository -folder and AppData-folder.</li>
       <li>SQL Server user needs to have sysadmin (create, restore and query databases) privileges in SQL Server</li>
@@ -156,6 +163,7 @@
     <summary>
       <b>Security and usage</b>
     </summary>
+    <p>&nbsp;</p>
     <p>By default this application uses basic authentication and check's that user belongs to one of this groups: WebAdmins, CmsAdmins, Administrators. But you can easily change authentication and use your own.</p>
     <p>With basic authentication it's recommended to use secured connection with HTTPS-protocol.</p>
     <p>It's also recommended to use IP-restrictions to restrain access from your network with IIS or implement it with URLRewrite module.</p>
