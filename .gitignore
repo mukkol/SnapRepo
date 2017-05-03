@@ -9,3 +9,4 @@ SnapRepository/
 */appSettings.config
 WebSite/appSettings.config
 WebSite/Web.*.config
+/WebSite/SnapRepo.Web.csproj.user
